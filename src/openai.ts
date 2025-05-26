@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getContext } from "./utils";
 
-export const getReminder = async (user_input: string) => {
+export const extractReminder = async (user_input: string) => {
   const res = await axios.post(
     "https://api.openai.com/v1/chat/completions",
     {
