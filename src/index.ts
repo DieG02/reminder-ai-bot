@@ -8,8 +8,8 @@ import { reminders } from "./manager";
 import { addReminder } from "./firebase";
 import { extractReminder } from "./openai";
 import {
-  scheduleNotification,
   rescheduleAllReminders,
+  scheduleNotification,
   scheduledJobs,
 } from "./cron";
 import { ReminderData, StoredReminder } from "./types";
@@ -20,12 +20,10 @@ export const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
 // --- Message Handler ---
 bot.on("text", async (ctx) => {
   const chatId = ctx.chat.id;
-
   const messageText = ctx.message.text;
+
   const content = await extractReminder(messageText);
-  console.log(content);
   content.map(async (data: ReminderData) => {
-    console.log({ data });
     if (
       data.status === "COMPLETED" &&
       data.reminder?.date &&
@@ -33,9 +31,8 @@ bot.on("text", async (ctx) => {
       data.reminder?.task
     ) {
       const { date, time, task } = data.reminder;
-      const dateTimeString = `${date} ${time}`;
       const scheduleDateTime = parse(
-        dateTimeString,
+        `${date} ${time}`,
         "dd/MM/yyyy HH:mm",
         new Date(),
         {

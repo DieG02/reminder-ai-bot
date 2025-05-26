@@ -1,6 +1,6 @@
 import * as admin from "firebase-admin";
 import { reminders } from "./manager";
-import { REMINDERS_COLLECTION } from "./types/collections";
+import { REMINDERS_COLLECTION } from "./types/constants";
 import { FirestoreReminderDoc, StoredReminder } from "./types";
 
 // --- Firebase Initialization ---
@@ -24,6 +24,15 @@ export const loadReminders = async (): Promise<void> => {
       .where("scheduleDateTime", ">", admin.firestore.Timestamp.fromDate(now))
       .get();
 
+    const expiredSnapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("scheduleDateTime", "<=", admin.firestore.Timestamp.fromDate(now))
+      .get();
+
+    for (const doc of expiredSnapshot.docs) {
+      await doc.ref.delete();
+    }
+
     const docs = snapshot.docs.map((doc) => {
       const data = doc.data() as FirestoreReminderDoc;
       return {
@@ -32,11 +41,10 @@ export const loadReminders = async (): Promise<void> => {
         task: data.task,
         scheduleDateTime: data.scheduleDateTime.toDate(),
         jobId: data.jobId || "",
-        isScheduled: data.isScheduled || false,
+        isScheduled: false,
       } as StoredReminder;
     });
     reminders.reset(docs);
-
     console.log(
       `Loaded ${reminders.length} potential active reminders from Firestore.`
     );
@@ -71,10 +79,9 @@ export const updateReminder = async (
           jobId: reminder.jobId,
           isScheduled: reminder.isScheduled,
         },
-        // Use merge: true to update fields without overwriting
         { merge: true }
       );
-    console.log(`Updated reminder ${reminder.id} in Firestore.`);
+    // console.log(`Updated reminder ${reminder.id} in Firestore.`);
   } catch (error) {
     console.error(
       `Error updating reminder ${reminder.id} in Firestore:`,
@@ -96,8 +103,8 @@ export const addReminder = async (
       scheduleDateTime: admin.firestore.Timestamp.fromDate(
         newReminderData.scheduleDateTime
       ),
-      jobId: "", // Initialize as empty, will be set after scheduling
-      isScheduled: false, // Initialize as false
+      jobId: "",
+      isScheduled: false,
     });
     console.log(`Added new reminder with ID: ${docRef.id} to Firestore.`);
     return docRef.id;
