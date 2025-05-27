@@ -1,8 +1,8 @@
 import { CronJob } from "cron";
 import { loadReminders, updateReminder, deleteReminder } from "./firebase";
-import { reminders } from "./manager";
+import { reminders } from "./model";
 import { StoredReminder } from "./types";
-import { bot } from ".";
+import { bot } from "./index";
 import { NEXT_SCHEDULE_WINDOW } from "./types/constants";
 
 export let scheduledJobs: { [key: string]: CronJob } = {};
@@ -34,7 +34,7 @@ export const scheduleNotification = (reminder: StoredReminder): void => {
         );
         await bot.telegram.sendMessage(
           reminder.chatId,
-          `🔔 Reminder: ${reminder.task}`
+          `Hey ${bot.context.session?.username}! 🔔 Reminder: ${reminder.task}`
         );
         await deleteReminder(reminder.id);
         reminders.remove(reminder.id);

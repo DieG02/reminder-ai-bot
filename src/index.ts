@@ -1,10 +1,7 @@
-import dotenv from "dotenv";
-dotenv.config();
-
-import { Telegraf } from "telegraf";
+import { Telegraf, session } from "telegraf";
 import { parse } from "date-fns";
 import { enGB } from "date-fns/locale";
-import { reminders } from "./manager";
+import { reminders } from "./model";
 import { addReminder } from "./firebase";
 import { extractReminder } from "./openai";
 import {
@@ -13,12 +10,38 @@ import {
   scheduledJobs,
 } from "./cron";
 import { ReminderData, StoredReminder } from "./types";
+import { AIContext } from "./types/app";
+import commandHandlers from "./commands";
+
+import dotenv from "dotenv";
+dotenv.config();
 
 // Initialize bot
-export const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!);
+export const bot = new Telegraf<AIContext>(process.env.TELEGRAM_BOT_TOKEN!);
+
+// Session middleware
+bot.use(session());
+
+bot.catch((err: unknown, ctx: any) => {
+  console.error(`Error for ${ctx.updateType}:`, err);
+  if (ctx.chat) {
+    ctx.reply("Oops, something went wrong!");
+  }
+});
+
+// Register the ALL commands handler NEXT
+bot.use(commandHandlers);
 
 // --- Message Handler ---
 bot.on("text", async (ctx) => {
+  ctx.session = ctx.session || {};
+  if (ctx.session.waiting === "name") {
+    ctx.session.username = ctx.message.text;
+    ctx.session.waiting = undefined; // Clear the flag
+    await ctx.reply(`Nice to meet you, ${ctx.session.username}!`);
+    return;
+  }
+
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 

@@ -1,5 +1,5 @@
 import * as admin from "firebase-admin";
-import { reminders } from "./manager";
+import { reminders } from "./model";
 import { REMINDERS_COLLECTION } from "./types/constants";
 import { FirestoreReminderDoc, StoredReminder } from "./types";
 
@@ -8,7 +8,7 @@ const serviceAccount = require("./firebase-services.json");
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });
-const db = admin.firestore();
+export const db = admin.firestore();
 
 // --- Persistence Logic with Firestore ---
 /**

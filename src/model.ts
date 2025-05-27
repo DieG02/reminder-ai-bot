@@ -1,9 +1,6 @@
 import { StoredReminder } from "./types";
 
 // --- Global State ---
-// This 'reminders' array will now only hold reminders that are loaded at startup
-// and are yet to be processed/sent. Once a reminder is sent, it's deleted from Firestore
-// and removed from this in-memory array.
 
 class ReminderManager {
   // Using a Map for efficient lookups and deletions by ID
@@ -28,7 +25,6 @@ class ReminderManager {
   }
 
   remove(id: string): boolean {
-    // Returns true if an element was successfully removed
     return this._reminders.delete(id);
   }
 
