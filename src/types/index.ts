@@ -19,6 +19,7 @@ export interface FirestoreReminderDoc {
   scheduleDateTime: Timestamp; // Stored as Firestore Timestamp
   jobId: string;
   isScheduled: boolean;
+  code: string;
 }
 
 // Represents the structure of a reminder used within our application's logic
@@ -29,4 +30,5 @@ export interface StoredReminder {
   scheduleDateTime: Date; // JavaScript Date object
   jobId: string;
   isScheduled: boolean;
+  code: string;
 }
