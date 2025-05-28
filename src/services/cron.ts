@@ -1,15 +1,33 @@
 import { CronJob } from "cron";
-import { loadReminders, updateReminder, deleteReminder } from "./firebase";
-import { reminders } from "./model";
-import { StoredReminder } from "./types";
-import { bot } from "./index";
-import { NEXT_SCHEDULE_WINDOW } from "./types/constants";
+import { bot } from "../index";
+import { local, store } from "../store";
+import { StoredReminder } from "../types";
+import { NEXT_SCHEDULE_WINDOW } from "../types/constants";
 
 export let scheduledJobs: { [key: string]: CronJob } = {};
 
-function isPast(date: string | Date) {
+const isPast = (date: string | Date) => {
   return new Date(date) < new Date();
-}
+};
+
+const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
+  try {
+    console.log(
+      `Sending reminder for "${reminder.task}" to chat ${reminder.chatId}`
+    );
+    await bot.telegram.sendMessage(
+      reminder.chatId,
+      `🔔 Reminder: ${reminder.task}`
+    );
+    await store.deleteReminder(reminder.id);
+    local.remove(reminder.id);
+    delete scheduledJobs[jobId];
+  } catch (error) {
+    console.error(`Failed to send reminder for "${reminder.task}":`, error);
+    reminder.isScheduled = false;
+    await store.updateReminder(reminder);
+  }
+};
 
 export const scheduleNotification = (reminder: StoredReminder): void => {
   const jobId = `reminder-${reminder.id}`;
@@ -21,37 +39,9 @@ export const scheduleNotification = (reminder: StoredReminder): void => {
     console.log(
       `Reminder for "${reminder.task}" at ${reminder.scheduleDateTime} is in the past.`
     );
-    deleteReminder(reminder.id);
+    store.deleteReminder(reminder.id);
     return;
   }
-
-  const scheduleFinalTimeout = () => {
-    const finalDelay = targetTime - Date.now();
-    const finalTimeout = setTimeout(async () => {
-      try {
-        console.log(
-          `Sending reminder for "${reminder.task}" to chat ${reminder.chatId}`
-        );
-        await bot.telegram.sendMessage(
-          reminder.chatId,
-          `Hey ${bot.context.session?.username}! 🔔 Reminder: ${reminder.task}`
-        );
-        await deleteReminder(reminder.id);
-        reminders.remove(reminder.id);
-        delete scheduledJobs[jobId];
-      } catch (error) {
-        console.error(`Failed to send reminder for "${reminder.task}":`, error);
-        reminder.isScheduled = false;
-        await updateReminder(reminder);
-      }
-    }, finalDelay);
-
-    const fakeJob = {
-      stop: () => clearTimeout(finalTimeout),
-    } as CronJob;
-
-    scheduledJobs[jobId] = fakeJob;
-  };
 
   if (delay > NEXT_SCHEDULE_WINDOW) {
     // Schedule an intermediate timeout that will schedule the real one later
@@ -68,24 +58,33 @@ export const scheduleNotification = (reminder: StoredReminder): void => {
 
     scheduledJobs[jobId] = fakeJob;
   } else {
-    scheduleFinalTimeout();
+    const finalDelay = targetTime - Date.now();
+    const finalTimeout = setTimeout(
+      async () => deliverReminder(reminder, jobId),
+      finalDelay
+    );
+
+    const fakeJob = {
+      stop: () => clearTimeout(finalTimeout),
+    } as CronJob;
+
+    scheduledJobs[jobId] = fakeJob;
   }
 
   reminder.jobId = jobId;
   reminder.isScheduled = true;
-  updateReminder(reminder);
-
+  store.updateReminder(reminder);
   console.log(`Scheduled "${reminder.task}" at ${reminder.scheduleDateTime}`);
 };
 
 export const rescheduleAllReminders = async (): Promise<void> => {
-  await loadReminders();
+  await store.loadReminders();
 
-  for (const reminder of reminders.toArray()) {
+  for (const reminder of local.toArray()) {
     if (isPast(reminder.scheduleDateTime)) {
       console.log(`Deleting expired reminder "${reminder.task}"`);
-      await deleteReminder(reminder.id);
-      reminders.remove(reminder.id);
+      await store.deleteReminder(reminder.id);
+      local.remove(reminder.id);
     } else if (!reminder.isScheduled) {
       console.log(`Rescheduling reminder "${reminder.task}"`);
       scheduleNotification(reminder);
