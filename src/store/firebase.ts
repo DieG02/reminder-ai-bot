@@ -1,14 +1,8 @@
-import * as admin from "firebase-admin";
-import { reminders } from "./model";
-import { REMINDERS_COLLECTION } from "./types/constants";
-import { FirestoreReminderDoc, StoredReminder } from "./types";
-
-// --- Firebase Initialization ---
-const serviceAccount = require("./firebase-services.json");
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-export const db = admin.firestore();
+import { firestore } from "firebase-admin";
+import local from "./model";
+import { db } from "./index";
+import { REMINDERS_COLLECTION } from "../types/constants";
+import { FirestoreReminderDoc, ReminderData, StoredReminder } from "../types";
 
 // --- Persistence Logic with Firestore ---
 /**
@@ -21,12 +15,12 @@ export const loadReminders = async (): Promise<void> => {
     const now = new Date();
     const snapshot = await db
       .collection(REMINDERS_COLLECTION)
-      .where("scheduleDateTime", ">", admin.firestore.Timestamp.fromDate(now))
+      .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
       .get();
 
     const expiredSnapshot = await db
       .collection(REMINDERS_COLLECTION)
-      .where("scheduleDateTime", "<=", admin.firestore.Timestamp.fromDate(now))
+      .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(now))
       .get();
 
     for (const doc of expiredSnapshot.docs) {
@@ -42,15 +36,16 @@ export const loadReminders = async (): Promise<void> => {
         scheduleDateTime: data.scheduleDateTime.toDate(),
         jobId: data.jobId || "",
         isScheduled: false,
+        code: data.code,
       } as StoredReminder;
     });
-    reminders.reset(docs);
+    local.reset(docs);
     console.log(
-      `Loaded ${reminders.length} potential active reminders from Firestore.`
+      `Loaded ${local.length} potential active reminders from Firestore.`
     );
   } catch (error) {
     console.error("Error loading reminders from Firestore:", error);
-    reminders.clear();
+    local.clear();
   }
 };
 
@@ -73,11 +68,12 @@ export const updateReminder = async (
         {
           chatId: reminder.chatId,
           task: reminder.task,
-          scheduleDateTime: admin.firestore.Timestamp.fromDate(
+          scheduleDateTime: firestore.Timestamp.fromDate(
             reminder.scheduleDateTime
           ),
           jobId: reminder.jobId,
           isScheduled: reminder.isScheduled,
+          code: reminder.code,
         },
         { merge: true }
       );
@@ -100,11 +96,12 @@ export const addReminder = async (
     const docRef = await db.collection(REMINDERS_COLLECTION).add({
       chatId: newReminderData.chatId,
       task: newReminderData.task,
-      scheduleDateTime: admin.firestore.Timestamp.fromDate(
+      scheduleDateTime: firestore.Timestamp.fromDate(
         newReminderData.scheduleDateTime
       ),
       jobId: "",
       isScheduled: false,
+      code: newReminderData.code,
     });
     console.log(`Added new reminder with ID: ${docRef.id} to Firestore.`);
     return docRef.id;
@@ -127,4 +124,64 @@ export const deleteReminder = async (reminderId: string): Promise<void> => {
       error
     );
   }
+};
+
+export const getUserReminders = async (
+  chatId: number
+): Promise<StoredReminder[] | null> => {
+  try {
+    const now = new Date();
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("chatId", "==", chatId)
+      .where("isScheduled", "==", true) // Only show active ones
+      .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
+      .orderBy("scheduleDateTime", "asc")
+      .get();
+
+    const userReminders: StoredReminder[] = snapshot.docs.map((doc) => {
+      const data = doc.data() as FirestoreReminderDoc;
+      return {
+        id: doc.id,
+        chatId: data.chatId,
+        // creatorId: data.creatorId,
+        // isGroupReminder: data.isGroupReminder || false,
+        // targetUsers: data.targetUsers || [],
+        task: data.task,
+        scheduleDateTime: data.scheduleDateTime.toDate(),
+        jobId: data.jobId,
+        isScheduled: data.isScheduled,
+        code: data.code,
+      };
+    });
+
+    // const inlineKeyboard = userReminders.map((r, index) => {
+    //   const dateStr = format(r.scheduleDateTime, 'dd/MM/yyyy HH:mm', { locale: enGB });
+    //   const groupSuffix = r.isGroupReminder ? ` (Group: ${r.chatId})` : ''; // Improve group display
+    //   message += `${index + 1}. ${r.task} on <span class="math-inline">\{dateStr\}</span>{groupSuffix}\n`;
+    //   return [{ text: `${index + 1}. ${r.task}`, callback_data: `manage_reminder:select:${r.id}` }];
+    // });
+
+    // ctx.reply(message, {
+    //   reply_markup: {
+    //     inline_keyboard: inlineKeyboard
+    //   },
+    //   parse_mode: 'HTML' // For group mention links
+    // });
+
+    // await bot.telegram.sendMessage(chatId, message);
+
+    // ctx.reply(message, {
+    //   reply_markup: {
+    //     inline_keyboard: inlineKeyboard
+    //   },
+    //   parse_mode: 'HTML' // For group mention links
+    // });
+    return userReminders;
+  } catch (error) {
+    console.error("Error listing reminders:", error);
+    return null;
+  }
+
+  return [];
 };

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getContext } from "./utils";
+import { getContext } from "../utils";
 
 export const extractReminder = async (user_input: string) => {
   const res = await axios.post(

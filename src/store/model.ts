@@ -1,4 +1,4 @@
-import { StoredReminder } from "./types";
+import { StoredReminder } from "../types";
 
 // --- Global State ---
 
@@ -42,4 +42,4 @@ class ReminderManager {
   }
 }
 
-export const reminders = new ReminderManager();
+export default new ReminderManager();
