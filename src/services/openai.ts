@@ -1,13 +1,19 @@
 import axios from "axios";
-import { getContext } from "../utils";
+import context from "./prompt";
+import { examples } from "../utils/dumb";
 
-export const extractReminder = async (user_input: string) => {
+export const extractReminder = async (user_input: string, dumb?: boolean) => {
+  if (dumb) {
+    const date = new Date();
+    const index = date.getTime() % 10;
+    return new Array(examples[index]);
+  }
   const res = await axios.post(
     "https://api.openai.com/v1/chat/completions",
     {
       model: "gpt-4.1-mini",
       messages: [
-        { role: "system", content: getContext() },
+        { role: "system", content: context() },
         { role: "user", content: user_input },
       ],
     },
@@ -18,6 +24,5 @@ export const extractReminder = async (user_input: string) => {
       },
     }
   );
-
   return JSON.parse(res.data.choices[0].message.content);
 };

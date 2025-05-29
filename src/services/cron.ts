@@ -31,9 +31,7 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
 
 export const scheduleNotification = (reminder: StoredReminder): void => {
   const jobId = `reminder-${reminder.id}`;
-  const targetTime = new Date(reminder.scheduleDateTime).getTime();
-  const now = Date.now();
-  const delay = targetTime - now;
+  const timer = new Date(reminder.scheduleDateTime);
 
   if (isPast(reminder.scheduleDateTime)) {
     console.log(
@@ -43,33 +41,14 @@ export const scheduleNotification = (reminder: StoredReminder): void => {
     return;
   }
 
-  if (delay > NEXT_SCHEDULE_WINDOW) {
-    // Schedule an intermediate timeout that will schedule the real one later
-    const intermediateTimeout = setTimeout(() => {
-      console.log(
-        `Intermediate timeout reached for reminder "${reminder.task}"`
-      );
-      scheduleNotification(reminder); // Retry closer to actual time
-    }, NEXT_SCHEDULE_WINDOW);
-
-    const fakeJob = {
-      stop: () => clearTimeout(intermediateTimeout),
-    } as CronJob;
-
-    scheduledJobs[jobId] = fakeJob;
-  } else {
-    const finalDelay = targetTime - Date.now();
-    const finalTimeout = setTimeout(
-      async () => deliverReminder(reminder, jobId),
-      finalDelay
-    );
-
-    const fakeJob = {
-      stop: () => clearTimeout(finalTimeout),
-    } as CronJob;
-
-    scheduledJobs[jobId] = fakeJob;
-  }
+  const job = new CronJob(
+    timer,
+    () => deliverReminder(reminder, jobId), // onTick
+    null, // onComplete
+    true, // start
+    Intl.DateTimeFormat().resolvedOptions().timeZone // TODO: take from user, not from server
+  );
+  scheduledJobs[jobId] = job;
 
   reminder.jobId = jobId;
   reminder.isScheduled = true;
