@@ -3,7 +3,7 @@ import * as firestore from "./firebase";
 import model from "./model";
 
 // --- Firebase Initialization ---
-const serviceAccount = require("../config/firebase-services.json");
+const serviceAccount = require(process.env.GOOGLE_CREDENTIALS!);
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
 });

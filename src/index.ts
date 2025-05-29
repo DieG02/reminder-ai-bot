@@ -1,12 +1,12 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import { Telegraf, session } from "telegraf";
 // import { message } from "telegraf/filters";
 import { rescheduleAllReminders, scheduledJobs } from "./services/cron";
 import commandHandlers from "./handlers/commands";
 import messageHandlers from "./handlers/messages";
 import { AIContext } from "./types/app";
-
-import dotenv from "dotenv";
-dotenv.config();
 
 // Initialize bot
 export const bot = new Telegraf<AIContext>(process.env.TELEGRAM_BOT_TOKEN!);

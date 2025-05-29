@@ -4,7 +4,7 @@ dist/
 
 # Propmt
 src/playground/
-src/firebase-services.json
+src/config/firebase-services.json
 
 # Env
 .env
