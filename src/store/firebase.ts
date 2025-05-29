@@ -2,7 +2,7 @@ import { firestore } from "firebase-admin";
 import local from "./model";
 import { db } from "./index";
 import { REMINDERS_COLLECTION } from "../types/constants";
-import { FirestoreReminderDoc, ReminderData, StoredReminder } from "../types";
+import { FirestoreReminderDoc, StoredReminder } from "../types";
 
 // --- Persistence Logic with Firestore ---
 /**
@@ -114,18 +114,79 @@ export const addReminder = async (
 /**
  * Deletes a reminder document from Firestore.
  */
-export const deleteReminder = async (reminderId: string): Promise<void> => {
+export const deleteReminder = async (
+  reminderCode: string
+): Promise<boolean> => {
   try {
-    await db.collection(REMINDERS_COLLECTION).doc(reminderId).delete();
-    console.log(`Deleted reminder ${reminderId} from Firestore.`);
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("code", "==", reminderCode)
+      .limit(1) // limit to 1 for performance
+      .get();
+
+    if (snapshot.empty) {
+      console.warn(`No reminder found with code ${reminderCode}`);
+      return false;
+    }
+
+    const doc = snapshot.docs[0];
+    await doc.ref.delete();
+
+    console.log(`Deleted reminder ${reminderCode} from Firestore.`);
+    return true;
   } catch (error) {
     console.error(
-      `Error deleting reminder ${reminderId} from Firestore:`,
+      `Error deleting reminder ${reminderCode} from Firestore:`,
       error
     );
+    return false;
   }
 };
 
+/**
+ * Get only the next schedule reminder from a user by chatId.
+ */
+export const getNextUserReminder = async (
+  chatId: number
+): Promise<StoredReminder | null> => {
+  try {
+    const now = new Date();
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("chatId", "==", chatId)
+      .where("isScheduled", "==", true) // Only show active ones
+      .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
+      .orderBy("scheduleDateTime", "asc")
+      .limit(1) // <--- This is the key change!
+      .get();
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const doc = snapshot.docs[0];
+    const data = doc.data() as FirestoreReminderDoc;
+
+    const nextReminder: StoredReminder = {
+      id: doc.id,
+      chatId: data.chatId,
+      task: data.task,
+      scheduleDateTime: data.scheduleDateTime.toDate(),
+      jobId: data.jobId,
+      isScheduled: data.isScheduled,
+      code: data.code,
+    };
+
+    return nextReminder;
+  } catch (error) {
+    console.error("Error getting next reminder:", error);
+    return null;
+  }
+};
+
+/**
+ * Get all reminders from a user by chatId.
+ */
 export const getUserReminders = async (
   chatId: number
 ): Promise<StoredReminder[] | null> => {
@@ -154,34 +215,39 @@ export const getUserReminders = async (
         code: data.code,
       };
     });
-
-    // const inlineKeyboard = userReminders.map((r, index) => {
-    //   const dateStr = format(r.scheduleDateTime, 'dd/MM/yyyy HH:mm', { locale: enGB });
-    //   const groupSuffix = r.isGroupReminder ? ` (Group: ${r.chatId})` : ''; // Improve group display
-    //   message += `${index + 1}. ${r.task} on <span class="math-inline">\{dateStr\}</span>{groupSuffix}\n`;
-    //   return [{ text: `${index + 1}. ${r.task}`, callback_data: `manage_reminder:select:${r.id}` }];
-    // });
-
-    // ctx.reply(message, {
-    //   reply_markup: {
-    //     inline_keyboard: inlineKeyboard
-    //   },
-    //   parse_mode: 'HTML' // For group mention links
-    // });
-
-    // await bot.telegram.sendMessage(chatId, message);
-
-    // ctx.reply(message, {
-    //   reply_markup: {
-    //     inline_keyboard: inlineKeyboard
-    //   },
-    //   parse_mode: 'HTML' // For group mention links
-    // });
     return userReminders;
   } catch (error) {
     console.error("Error listing reminders:", error);
     return null;
   }
+};
 
-  return [];
+/**
+ * Deletes all reminders for a specific chatId.
+ */
+export const clearUserReminders = async (
+  chatId: number | string
+): Promise<void> => {
+  try {
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("chatId", "==", chatId)
+      .get();
+
+    if (snapshot.empty) {
+      console.log(`No reminders found for chatId: ${chatId}`);
+      return;
+    }
+
+    const batch = db.batch();
+
+    snapshot.docs.forEach((doc) => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+    console.log(`Deleted ${snapshot.size} reminders for chatId: ${chatId}`);
+  } catch (error) {
+    console.error(`Failed to delete reminders for chatId ${chatId}:`, error);
+  }
 };

@@ -1,10 +1,5 @@
 import * as admin from "firebase-admin";
-import {
-  addReminder,
-  deleteReminder,
-  loadReminders,
-  updateReminder,
-} from "./firebase";
+import * as firestore from "./firebase";
 import model from "./model";
 
 // --- Firebase Initialization ---
@@ -16,8 +11,11 @@ export const db = admin.firestore();
 export const local = model;
 
 export const store = {
-  loadReminders,
-  updateReminder,
-  addReminder,
-  deleteReminder,
+  loadReminders: firestore.loadReminders,
+  updateReminder: firestore.updateReminder,
+  addReminder: firestore.addReminder,
+  deleteReminder: firestore.deleteReminder,
+  getNextUserReminder: firestore.getNextUserReminder,
+  getUserReminders: firestore.getUserReminders,
+  clearUserReminders: firestore.clearUserReminders,
 };
