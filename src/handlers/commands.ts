@@ -2,6 +2,7 @@ import { Composer } from "telegraf";
 import { store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
+import { createCalendarEvent } from "../services/calendar";
 
 // Create a single Composer instance to hold all commands
 const composer = new Composer<AIContext>();
@@ -76,6 +77,52 @@ composer.command("timezone", async (ctx: AIContext) => {
 //   ctx.session.waiting = "name";
 //   await ctx.reply("What is your name?");
 // });
+
+composer.command("calendar", async (ctx: AIContext) => {
+  // --- Example Usage ---
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour from now
+
+  const event = {
+    summary: "Node.js Calendar Test Meeting",
+    location: "Remote via Google Meet",
+    description: "A test meeting scheduled from a Node.js application.",
+    start: {
+      dateTime: now.toISOString(),
+      timeZone: "Europe/Rome", // Important: use IANA Time Zone Database format
+    },
+    end: {
+      dateTime: oneHourLater.toISOString(),
+      timeZone: "Europe/Rome",
+    },
+    // attendees: [
+    //   { email: "diegob0505@gmail.com" }, // Replace with actual emails
+    //   { email: "attendee2@example.com", optional: true },
+    // ],
+    reminders: {
+      useDefault: false,
+      overrides: [
+        { method: "email", minutes: 60 },
+        { method: "popup", minutes: 10 },
+      ],
+    },
+    // For Google Meet integration:
+    conferenceData: {
+      createRequest: {
+        requestId: "your-unique-request-id-" + Date.now(), // Must be unique per event
+        conferenceSolutionKey: {
+          type: "hangoutsMeet", // Or 'eventHangout' for older type, 'addOn' for custom solutions
+        },
+      },
+    },
+  };
+
+  try {
+    await createCalendarEvent(event);
+  } catch (error) {
+    console.error("Failed to schedule event.");
+  }
+});
 
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
