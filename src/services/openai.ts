@@ -6,6 +6,21 @@ export const extractReminder = async (user_input: string, dumb?: boolean) => {
   if (dumb) {
     const date = new Date();
     const index = date.getTime() % 10;
+    const custom = {
+      status: "COMPLETED",
+      reminder: {
+        task: "brush my teeths",
+        date: null,
+        time: null,
+        relativeDuration: 8,
+        relativeUnit: "minutes",
+      },
+      repeat: null,
+      repeatCount: null,
+      repeatUntil: null,
+      missing: null,
+    };
+
     return new Array(examples[index]);
   }
   const res = await axios.post(

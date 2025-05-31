@@ -2,7 +2,7 @@ import { CronJob } from "cron";
 import { bot } from "../index";
 import { local, store } from "../store";
 import { StoredReminder } from "../types";
-import { NEXT_SCHEDULE_WINDOW } from "../types/constants";
+import { getNextRepeatDate } from "../utils";
 
 export let scheduledJobs: { [key: string]: CronJob } = {};
 
@@ -19,6 +19,40 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
       reminder.chatId,
       `🔔 Reminder: ${reminder.task}`
     );
+
+    if (reminder.repeat) {
+      // 🔁 Reschedule
+      const nextDate = getNextRepeatDate(
+        new Date(reminder.scheduleDateTime),
+        reminder.repeat
+      );
+
+      if (
+        nextDate &&
+        (!reminder.repeatUntil || nextDate <= new Date(reminder.repeatUntil))
+      ) {
+        reminder.scheduleDateTime = nextDate;
+
+        if (typeof reminder.repeatCount === "number") {
+          reminder.repeatCount -= 1;
+          if (reminder.repeatCount <= 0) {
+            console.log(
+              `Repeat count exhausted for "${reminder.task}". Not rescheduling.`
+            );
+            await store.deleteReminder(reminder.id);
+            local.remove(reminder.id);
+            delete scheduledJobs[jobId];
+            return;
+          }
+        }
+
+        scheduleNotification(reminder);
+        await store.updateReminder(reminder);
+        return;
+      }
+    }
+
+    // 🧹 Clean up if no repeat
     await store.deleteReminder(reminder.id);
     local.remove(reminder.id);
     delete scheduledJobs[jobId];
@@ -33,7 +67,7 @@ export const scheduleNotification = (reminder: StoredReminder): void => {
   const jobId = `reminder-${reminder.id}`;
   const timer = new Date(reminder.scheduleDateTime);
 
-  if (isPast(reminder.scheduleDateTime)) {
+  if (isPast(timer)) {
     console.log(
       `Reminder for "${reminder.task}" at ${reminder.scheduleDateTime} is in the past.`
     );
