@@ -37,6 +37,9 @@ export const loadReminders = async (): Promise<void> => {
         jobId: data.jobId || "",
         isScheduled: false,
         code: data.code,
+        repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
       } as StoredReminder;
     });
     local.reset(docs);
@@ -102,6 +105,9 @@ export const addReminder = async (
       jobId: "",
       isScheduled: false,
       code: newReminderData.code,
+      repeat: newReminderData.repeat,
+      repeatCount: newReminderData.repeatCount,
+      repeatUntil: newReminderData.repeatUntil,
     });
     console.log(`Added new reminder with ID: ${docRef.id} to Firestore.`);
     return docRef.id;
@@ -175,6 +181,9 @@ export const getNextUserReminder = async (
       jobId: data.jobId,
       isScheduled: data.isScheduled,
       code: data.code,
+      repeat: data.repeat,
+      repeatCount: data.repeatCount,
+      repeatUntil: data.repeatUntil,
     };
 
     return nextReminder;
@@ -231,6 +240,8 @@ export const getUserAgenda = async (
         isScheduled: data.isScheduled,
         code: data.code,
         repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
       };
     });
     return agenda;
@@ -269,6 +280,9 @@ export const getAllUserReminders = async (
         jobId: data.jobId,
         isScheduled: data.isScheduled,
         code: data.code,
+        repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
       };
     });
     return userReminders;

@@ -1,18 +1,32 @@
 import { Timestamp } from "firebase-admin/firestore";
 
-export type IntervalsType = "daily" | "weekly" | "monthly" | undefined;
+export type RepeatType = "daily" | "weekly" | "monthly" | null;
+export type TimeUnitsType = "minutes" | "hours" | "days" | "weeks" | null;
+export type DateString = string | null;
+
+export enum StatusType {
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  REJECTED = "REJECTED",
+}
 
 // Represents the structure of the parsed reminder data from OpenAI
 export interface ReminderData {
-  status: string;
-  reminder: {
-    date: string | null; // DD/MM/YYYY
-    time: string | null; // HH:mm
-    task: string | null;
-  };
-  repeat?: IntervalsType;
+  status: StatusType;
+  reminder: ReminderBody; // TODO: Replace to body
+  repeat?: RepeatType;
+  repeatCount?: number | null;
+  repeatUntil?: DateString;
   missing: string[] | "";
   roadmap?: string[]; // Optional
+}
+
+export interface ReminderBody {
+  date: string | null; // DD/MM/YYYY
+  time: string | null; // HH:mm
+  task: string | null;
+  relativeDuration: number | null;
+  relativeUnit: TimeUnitsType;
 }
 
 // Represents the structure of a reminder document in Firestore
@@ -23,7 +37,9 @@ export interface FirestoreReminderDoc {
   jobId: string;
   isScheduled: boolean;
   code: string;
-  repeat?: IntervalsType;
+  repeat?: RepeatType;
+  repeatCount?: number | null;
+  repeatUntil?: DateString;
 }
 
 // Represents the structure of a reminder used within our application's logic
@@ -35,5 +51,7 @@ export interface StoredReminder {
   jobId: string;
   isScheduled: boolean;
   code: string;
-  repeat?: IntervalsType;
+  repeat?: RepeatType;
+  repeatCount?: number | null;
+  repeatUntil?: DateString;
 }
