@@ -185,20 +185,23 @@ export const getNextUserReminder = async (
 };
 
 /**
- * Get all reminders of today, from 00:00 to 23:59hs
+ * Get all reminders for today, from 00:00 to 23:59hs
  */
 export const getUserAgenda = async (
   chatId: number
 ): Promise<StoredReminder[] | null> => {
   try {
-    const now = new Date();
-    const startDate = new Date(
-      now.toLocaleString("en-GB", { timeZone: "Europe/Rome" })
-    );
-    const endDate = new Date(
-      now.toLocaleString("en-GB", { timeZone: "Europe/Rome" })
-    );
+    const nowInTimeZone = new Date().toLocaleString("en-US", {
+      timeZone: "Europe/Rome",
+    });
+
+    // Create a date object from that string
+    const localNow = new Date(nowInTimeZone);
+
+    // Build start and end of day
+    const startDate = new Date(localNow);
     startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(localNow);
     endDate.setHours(23, 59, 59, 999);
 
     const snapshot = await db
@@ -227,11 +230,12 @@ export const getUserAgenda = async (
         jobId: data.jobId,
         isScheduled: data.isScheduled,
         code: data.code,
+        repeat: data.repeat,
       };
     });
     return agenda;
   } catch (error) {
-    console.error("Error getting next reminder:", error);
+    console.error("Error getting agenda of today:", error);
     return null;
   }
 };
