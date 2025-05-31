@@ -185,9 +185,61 @@ export const getNextUserReminder = async (
 };
 
 /**
+ * Get all reminders of today, from 00:00 to 23:59hs
+ */
+export const getUserAgenda = async (
+  chatId: number
+): Promise<StoredReminder[] | null> => {
+  try {
+    const now = new Date();
+    const startDate = new Date(
+      now.toLocaleString("en-GB", { timeZone: "Europe/Rome" })
+    );
+    const endDate = new Date(
+      now.toLocaleString("en-GB", { timeZone: "Europe/Rome" })
+    );
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("chatId", "==", chatId)
+      .where("isScheduled", "==", true) // Only show active ones
+      .where("scheduleDateTime", ">=", firestore.Timestamp.fromDate(startDate))
+      .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(endDate))
+      .orderBy("scheduleDateTime", "asc")
+      .get();
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const agenda: StoredReminder[] = snapshot.docs.map((doc) => {
+      const data = doc.data() as FirestoreReminderDoc;
+      return {
+        id: doc.id,
+        chatId: data.chatId,
+        // creatorId: data.creatorId,
+        // isGroupReminder: data.isGroupReminder || false,
+        // targetUsers: data.targetUsers || [],
+        task: data.task,
+        scheduleDateTime: data.scheduleDateTime.toDate(),
+        jobId: data.jobId,
+        isScheduled: data.isScheduled,
+        code: data.code,
+      };
+    });
+    return agenda;
+  } catch (error) {
+    console.error("Error getting next reminder:", error);
+    return null;
+  }
+};
+
+/**
  * Get all reminders from a user by chatId.
  */
-export const getUserReminders = async (
+export const getAllUserReminders = async (
   chatId: number
 ): Promise<StoredReminder[] | null> => {
   try {

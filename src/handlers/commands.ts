@@ -106,6 +106,40 @@ composer.command("next", async (ctx: AIContext) => {
   }
 });
 
+composer.command("agenda", async (ctx: AIContext) => {
+  const chatId = ctx.chat!.id;
+
+  // Get reminders for the current user/chat
+  const agenda = await store.getUserAgenda(chatId);
+  if (!agenda) {
+    return ctx.reply("You have no pending reminders for today.");
+  }
+
+  let message = `*Here is your agenda for today:*\n\n`;
+
+  agenda.map((reminder, i) => {
+    const scheduleDate = reminder.scheduleDateTime;
+    const formattedDate = scheduleDate.toLocaleString("en-GB");
+
+    message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
+    message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
+    message += `*Task:* ${escapeMarkdownV2(reminder.task)}\n\n`;
+  });
+
+  try {
+    await ctx.reply(message, { parse_mode: "MarkdownV2" });
+  } catch (error) {
+    console.error("Failed to send MarkdownV2 message:", error);
+    // Fallback to plain text if MarkdownV2 parsing fails
+    await ctx.reply(
+      "Error displaying reminders. Here they are in plain text:\n\n" +
+        agenda
+          .map((r) => `${r.task} at ${r.scheduleDateTime.toLocaleString()}`)
+          .join("\n")
+    );
+  }
+});
+
 composer.command("all", async (ctx) => {
   const userId = ctx.from?.id;
   const chatId = ctx.chat.id;
@@ -114,7 +148,7 @@ composer.command("all", async (ctx) => {
   }
 
   // Get reminders for the current user/chat
-  const userReminders = await store.getUserReminders(chatId);
+  const userReminders = await store.getAllUserReminders(chatId);
   if (!userReminders || userReminders?.length == 0) {
     return ctx.reply("You have no pending reminders.");
   }
