@@ -37,6 +37,9 @@ export const loadReminders = async (): Promise<void> => {
         jobId: data.jobId || "",
         isScheduled: false,
         code: data.code,
+        repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
       } as StoredReminder;
     });
     local.reset(docs);
@@ -102,6 +105,9 @@ export const addReminder = async (
       jobId: "",
       isScheduled: false,
       code: newReminderData.code,
+      repeat: newReminderData.repeat,
+      repeatCount: newReminderData.repeatCount,
+      repeatUntil: newReminderData.repeatUntil,
     });
     console.log(`Added new reminder with ID: ${docRef.id} to Firestore.`);
     return docRef.id;
@@ -175,6 +181,9 @@ export const getNextUserReminder = async (
       jobId: data.jobId,
       isScheduled: data.isScheduled,
       code: data.code,
+      repeat: data.repeat,
+      repeatCount: data.repeatCount,
+      repeatUntil: data.repeatUntil,
     };
 
     return nextReminder;
@@ -185,9 +194,67 @@ export const getNextUserReminder = async (
 };
 
 /**
+ * Get all reminders for today, from 00:00 to 23:59hs
+ */
+export const getUserAgenda = async (
+  chatId: number
+): Promise<StoredReminder[] | null> => {
+  try {
+    const nowInTimeZone = new Date().toLocaleString("en-US", {
+      timeZone: "Europe/Rome",
+    });
+
+    // Create a date object from that string
+    const localNow = new Date(nowInTimeZone);
+
+    // Build start and end of day
+    const startDate = new Date(localNow);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(localNow);
+    endDate.setHours(23, 59, 59, 999);
+
+    const snapshot = await db
+      .collection(REMINDERS_COLLECTION)
+      .where("chatId", "==", chatId)
+      .where("isScheduled", "==", true) // Only show active ones
+      .where("scheduleDateTime", ">=", firestore.Timestamp.fromDate(startDate))
+      .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(endDate))
+      .orderBy("scheduleDateTime", "asc")
+      .get();
+
+    if (snapshot.empty) {
+      return null;
+    }
+
+    const agenda: StoredReminder[] = snapshot.docs.map((doc) => {
+      const data = doc.data() as FirestoreReminderDoc;
+      return {
+        id: doc.id,
+        chatId: data.chatId,
+        // creatorId: data.creatorId,
+        // isGroupReminder: data.isGroupReminder || false,
+        // targetUsers: data.targetUsers || [],
+        task: data.task,
+        scheduleDateTime: data.scheduleDateTime.toDate(),
+        jobId: data.jobId,
+        isScheduled: data.isScheduled,
+        code: data.code,
+        repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
+      };
+    });
+    return agenda;
+  } catch (error) {
+    console.error("Error getting agenda of today:", error);
+    return null;
+  }
+};
+
+/**
  * Get all reminders from a user by chatId.
  */
-export const getUserReminders = async (
+export const getAllUserReminders = async (
   chatId: number
 ): Promise<StoredReminder[] | null> => {
   try {
@@ -213,6 +280,9 @@ export const getUserReminders = async (
         jobId: data.jobId,
         isScheduled: data.isScheduled,
         code: data.code,
+        repeat: data.repeat,
+        repeatCount: data.repeatCount,
+        repeatUntil: data.repeatUntil,
       };
     });
     return userReminders;
