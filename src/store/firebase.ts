@@ -1,6 +1,7 @@
-import { firestore } from "firebase-admin";
+import dayjs from "dayjs";
 import local from "./model";
 import { db } from "./index";
+import { firestore } from "firebase-admin";
 import { REMINDERS_COLLECTION } from "../types/constants";
 import { FirestoreReminderDoc, StoredReminder } from "../types";
 
@@ -33,7 +34,7 @@ export const loadReminders = async (): Promise<void> => {
         id: doc.id,
         chatId: data.chatId,
         task: data.task,
-        scheduleDateTime: data.scheduleDateTime.toDate(),
+        scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
         jobId: data.jobId || "",
         isScheduled: false,
         code: data.code,
@@ -72,7 +73,7 @@ export const updateReminder = async (
           chatId: reminder.chatId,
           task: reminder.task,
           scheduleDateTime: firestore.Timestamp.fromDate(
-            reminder.scheduleDateTime
+            reminder.scheduleDateTime.toDate()
           ),
           jobId: reminder.jobId,
           isScheduled: reminder.isScheduled,
@@ -100,7 +101,7 @@ export const addReminder = async (
       chatId: newReminderData.chatId,
       task: newReminderData.task,
       scheduleDateTime: firestore.Timestamp.fromDate(
-        newReminderData.scheduleDateTime
+        newReminderData.scheduleDateTime.toDate()
       ),
       jobId: "",
       isScheduled: false,
@@ -177,7 +178,7 @@ export const getNextUserReminder = async (
       id: doc.id,
       chatId: data.chatId,
       task: data.task,
-      scheduleDateTime: data.scheduleDateTime.toDate(),
+      scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
       jobId: data.jobId,
       isScheduled: data.isScheduled,
       code: data.code,
@@ -235,7 +236,7 @@ export const getUserAgenda = async (
         // isGroupReminder: data.isGroupReminder || false,
         // targetUsers: data.targetUsers || [],
         task: data.task,
-        scheduleDateTime: data.scheduleDateTime.toDate(),
+        scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
         jobId: data.jobId,
         isScheduled: data.isScheduled,
         code: data.code,
@@ -276,7 +277,7 @@ export const getAllUserReminders = async (
         // isGroupReminder: data.isGroupReminder || false,
         // targetUsers: data.targetUsers || [],
         task: data.task,
-        scheduleDateTime: data.scheduleDateTime.toDate(),
+        scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
         jobId: data.jobId,
         isScheduled: data.isScheduled,
         code: data.code,

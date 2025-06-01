@@ -3,11 +3,9 @@ import { local, store } from "../store";
 import { extractReminder } from "../services/openai";
 import { scheduleNotification } from "../services/cron";
 import { wizardMiddleware } from "./wizard";
-import { generateShortCode, getScheduleDateTime } from "../utils";
 import { AIContext } from "../types/app";
+import { generateShortCode, getScheduleDateTime } from "../utils";
 import { ReminderData, StatusType, StoredReminder } from "../types";
-import { format } from "date-fns";
-import { enGB } from "date-fns/locale";
 
 const composer = new Composer<AIContext>();
 
@@ -55,9 +53,9 @@ composer.on("text", wizardMiddleware, async (ctx) => {
       newReminder.id = docId;
       local.add(newReminder);
       scheduleNotification(newReminder);
-      const schedule = new Date(scheduleDateTime);
-      const dateString = format(schedule, "dd/MM/yyyy", { locale: enGB });
-      const timeString = format(schedule, "HH:mm", { locale: enGB });
+
+      const dateString: string = scheduleDateTime.format("DD/MM/YYYY");
+      const timeString: string = scheduleDateTime.format("HH:mm");
 
       const message = `Got it\\! I'll remind you to "${task}" on ${dateString} at ${timeString}\n*Reminder Code:* \`${code}\``;
       await ctx.reply(message, {

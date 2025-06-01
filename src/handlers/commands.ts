@@ -88,7 +88,7 @@ composer.command("next", async (ctx: AIContext) => {
 
   let message = `*Here is your next reminder:*\n\n`;
   const scheduleDate = next.scheduleDateTime;
-  const formattedDate = scheduleDate.toLocaleString("en-GB");
+  const formattedDate = scheduleDate.toLocaleString();
 
   message += `*Code:* \`${next.code}\`\n`;
   message += `*Time:* ${formattedDate}\n`;
@@ -119,7 +119,7 @@ composer.command("agenda", async (ctx: AIContext) => {
 
   agenda.map((reminder, i) => {
     const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString("en-GB");
+    const formattedDate = scheduleDate.toLocaleString();
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
@@ -157,7 +157,7 @@ composer.command("all", async (ctx) => {
 
   userReminders.map((reminder, i) => {
     const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString("en-GB");
+    const formattedDate = scheduleDate.toLocaleString();
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
