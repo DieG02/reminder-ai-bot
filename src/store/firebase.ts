@@ -76,7 +76,7 @@ export const updateReminder = async (
         },
         { merge: true }
       );
-    // console.log(`Updated reminder ${reminder.id} in Firestore.`);
+    local.add(reminder);
   } catch (error) {
     console.error(
       `Error updating reminder ${reminder.id} in Firestore:`,
@@ -106,6 +106,7 @@ export const addReminder = async (
       repeatUntil: reminder.repeatUntil,
     });
     console.log(`Added new reminder with ID: ${docRef.id} to Firestore.`);
+    local.add({ ...reminder, id: docRef.id, jobId: "", isScheduled: false });
     return docRef.id;
   } catch (error) {
     console.error("Error adding reminder to Firestore:", error);
@@ -133,7 +134,7 @@ export const deleteReminder = async (
 
     const doc = snapshot.docs[0];
     await doc.ref.delete();
-
+    local.remove(doc.id);
     console.log(`Deleted reminder ${reminderCode} from Firestore.`);
     return true;
   } catch (error) {
@@ -222,6 +223,10 @@ export const getAllUserReminders = async (
         scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
       };
     });
+    local
+      .toArray()
+      .filter((r) => r.chatId === chatId)
+      .forEach((r) => local.remove(r.id));
     return userReminders;
   } catch (error) {
     console.error("Error listing reminders:", error);

@@ -1,5 +1,5 @@
 import { Composer } from "telegraf";
-import { store } from "../store";
+import { local, store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
 
@@ -22,7 +22,7 @@ composer.command("start", async (ctx: AIContext) => {
   );
 });
 
-composer.command("help", async (ctx) => {
+composer.command("help", async (ctx: AIContext) => {
   await ctx.reply(
     `*Available commands:*\n\n` +
       `/start \\- Start the bot\n` +
@@ -39,7 +39,7 @@ composer.command("help", async (ctx) => {
   );
 });
 
-composer.command("info", async (ctx) => {
+composer.command("info", async (ctx: AIContext) => {
   await ctx.reply(
     `📌 *Bot Workflow & Features*\n\n` +
       `1\\. *Set Up Your Profile*\n` +
@@ -56,6 +56,11 @@ composer.command("info", async (ctx) => {
       `🧠 The bot understands natural language\\! Try writing reminders in your own words\\.`,
     { parse_mode: "MarkdownV2" }
   );
+});
+
+composer.command("local", async (ctx: AIContext) => {
+  const localStorage = local.toArray();
+  console.log(localStorage);
 });
 
 composer.command("name", async (ctx: AIContext) => {

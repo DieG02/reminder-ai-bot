@@ -1,5 +1,5 @@
 import { Composer } from "telegraf";
-import { local, store } from "../store";
+import { store } from "../store";
 import { extractReminder } from "../services/openai";
 import { scheduleNotification } from "../services/cron";
 import { wizardMiddleware } from "./wizard";
@@ -14,7 +14,8 @@ composer.on("text", wizardMiddleware, async (ctx) => {
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText, false);
+  const content = await extractReminder(messageText, true);
+  console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
     const code = generateShortCode();
@@ -28,6 +29,7 @@ composer.on("text", wizardMiddleware, async (ctx) => {
     }
 
     const scheduleDateTime = getScheduleDateTime(data.reminder);
+    console.log(scheduleDateTime);
     if (!scheduleDateTime) {
       await ctx.reply(
         "I couldn't understand the date/time for the reminder. Please try again."
@@ -51,7 +53,6 @@ composer.on("text", wizardMiddleware, async (ctx) => {
     try {
       const docId = await store.addReminder(newReminder);
       newReminder.id = docId;
-      local.add(newReminder);
       scheduleNotification(newReminder);
 
       const dateString: string = scheduleDateTime.format("DD/MM/YYYY");

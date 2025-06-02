@@ -6,16 +6,17 @@ import { RepeatType, ReminderBody } from "../types/";
  */
 export const getNextRepeatDate = (
   current: Dayjs,
-  repeat: RepeatType
+  repeat: RepeatType,
+  relativeDuration: number = 1
 ): Dayjs => {
   if (!repeat) return current;
   return (
     {
-      minutely: () => current.add(1, "minute"),
-      hourly: () => current.add(1, "hour"),
-      daily: () => current.add(1, "day"),
-      weekly: () => current.add(1, "week"),
-      monthly: () => current.add(1, "month"),
+      minutely: () => current.add(relativeDuration, "minute"),
+      hourly: () => current.add(relativeDuration, "hour"),
+      daily: () => current.add(relativeDuration, "day"),
+      weekly: () => current.add(relativeDuration, "week"),
+      monthly: () => current.add(relativeDuration, "month"),
     }[repeat]?.() ?? current
   );
 };
@@ -44,6 +45,22 @@ export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
     }
     return base;
   }
+
+  // Case 3: Has only time, maybe recurring (e.g., daily at 08:00)
+  if (input.time) {
+    const [hours, minutes] = input.time.split(":").map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      let base = now.set("hour", hours).set("minute", minutes).set("second", 0);
+
+      // If the time has already passed today, move to tomorrow
+      if (base.isBefore(now)) {
+        base = base.add(1, "day");
+      }
+
+      return base;
+    }
+  }
+
   return null;
 };
 
