@@ -54,4 +54,7 @@ export interface StoredReminder {
   repeat?: RepeatType | null;
   repeatCount?: number | null;
   repeatUntil?: string | null;
+  // creatorId: data.creatorId,
+  // isGroupReminder: data.isGroupReminder || false,
+  // targetUsers: data.targetUsers || [],
 }

@@ -25,7 +25,6 @@ export const getNextRepeatDate = (
  */
 export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
   const now = dayjs();
-  console.log(input);
 
   // Case 1: Has absolute date and time
   if (input.date && input.time) {

@@ -80,11 +80,9 @@ composer.command("timezone", async (ctx: AIContext) => {
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
-  // Get reminders for the current user/chat
-  const next = await store.getNextUserReminder(chatId);
-  if (!next) {
-    return ctx.reply("You have no pending reminders.");
-  }
+  const response = await store.getAllUserReminders(chatId, 1);
+  if (!response?.length) return ctx.reply("You have no pending reminders.");
+  const next = response[0];
 
   let message = `*Here is your next reminder:*\n\n`;
   const scheduleDate = next.scheduleDateTime;
@@ -98,7 +96,6 @@ composer.command("next", async (ctx: AIContext) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         `${next.task} at ${next.scheduleDateTime.toLocaleString()}`
@@ -109,7 +106,6 @@ composer.command("next", async (ctx: AIContext) => {
 composer.command("agenda", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
-  // Get reminders for the current user/chat
   const agenda = await store.getUserAgenda(chatId);
   if (!agenda) {
     return ctx.reply("You have no pending reminders for today.");
@@ -130,7 +126,6 @@ composer.command("agenda", async (ctx: AIContext) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         agenda
@@ -147,7 +142,6 @@ composer.command("all", async (ctx) => {
     return ctx.reply("Could not identify you. Please try again.");
   }
 
-  // Get reminders for the current user/chat
   const userReminders = await store.getAllUserReminders(chatId);
   if (!userReminders || userReminders?.length == 0) {
     return ctx.reply("You have no pending reminders.");
@@ -168,7 +162,6 @@ composer.command("all", async (ctx) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         userReminders
