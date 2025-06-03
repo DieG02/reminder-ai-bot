@@ -16,7 +16,7 @@ export default (): string => {
     6.  **Output Format:** If a specific date/time is found, output as DD/MM/YYYY and HH:mm. For relative times, output the number and unit in specific fields.
 
     🔁 Repeat Rules:
-    7.  Supported values for "repeat": "daily", "weekly", "monthly".
+    7.  Supported values for "repeat": "minutely", "minutely", "daily", "weekly", "monthly".
     8.  Repeat ends can be controlled by:
         * "repeatUntil": a date (DD/MM/YYYY)
         * "repeatCount": a number of times to repeat

@@ -1,5 +1,5 @@
 import { Composer } from "telegraf";
-import { store } from "../store";
+import { local, store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
 
@@ -22,7 +22,7 @@ composer.command("start", async (ctx: AIContext) => {
   );
 });
 
-composer.command("help", async (ctx) => {
+composer.command("help", async (ctx: AIContext) => {
   await ctx.reply(
     `*Available commands:*\n\n` +
       `/start \\- Start the bot\n` +
@@ -39,7 +39,7 @@ composer.command("help", async (ctx) => {
   );
 });
 
-composer.command("info", async (ctx) => {
+composer.command("info", async (ctx: AIContext) => {
   await ctx.reply(
     `📌 *Bot Workflow & Features*\n\n` +
       `1\\. *Set Up Your Profile*\n` +
@@ -56,6 +56,11 @@ composer.command("info", async (ctx) => {
       `🧠 The bot understands natural language\\! Try writing reminders in your own words\\.`,
     { parse_mode: "MarkdownV2" }
   );
+});
+
+composer.command("local", async (ctx: AIContext) => {
+  const localStorage = local.toArray();
+  console.log(localStorage);
 });
 
 composer.command("name", async (ctx: AIContext) => {
@@ -80,15 +85,13 @@ composer.command("timezone", async (ctx: AIContext) => {
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
-  // Get reminders for the current user/chat
-  const next = await store.getNextUserReminder(chatId);
-  if (!next) {
-    return ctx.reply("You have no pending reminders.");
-  }
+  const response = await store.getAllUserReminders(chatId, 1);
+  if (!response?.length) return ctx.reply("You have no pending reminders.");
+  const next = response[0];
 
   let message = `*Here is your next reminder:*\n\n`;
   const scheduleDate = next.scheduleDateTime;
-  const formattedDate = scheduleDate.toLocaleString("en-GB");
+  const formattedDate = scheduleDate.toLocaleString();
 
   message += `*Code:* \`${next.code}\`\n`;
   message += `*Time:* ${formattedDate}\n`;
@@ -98,7 +101,6 @@ composer.command("next", async (ctx: AIContext) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         `${next.task} at ${next.scheduleDateTime.toLocaleString()}`
@@ -109,7 +111,6 @@ composer.command("next", async (ctx: AIContext) => {
 composer.command("agenda", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
-  // Get reminders for the current user/chat
   const agenda = await store.getUserAgenda(chatId);
   if (!agenda) {
     return ctx.reply("You have no pending reminders for today.");
@@ -119,7 +120,7 @@ composer.command("agenda", async (ctx: AIContext) => {
 
   agenda.map((reminder, i) => {
     const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString("en-GB");
+    const formattedDate = scheduleDate.toLocaleString();
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
@@ -130,7 +131,6 @@ composer.command("agenda", async (ctx: AIContext) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         agenda
@@ -147,7 +147,6 @@ composer.command("all", async (ctx) => {
     return ctx.reply("Could not identify you. Please try again.");
   }
 
-  // Get reminders for the current user/chat
   const userReminders = await store.getAllUserReminders(chatId);
   if (!userReminders || userReminders?.length == 0) {
     return ctx.reply("You have no pending reminders.");
@@ -157,7 +156,7 @@ composer.command("all", async (ctx) => {
 
   userReminders.map((reminder, i) => {
     const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString("en-GB");
+    const formattedDate = scheduleDate.toLocaleString();
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
@@ -168,7 +167,6 @@ composer.command("all", async (ctx) => {
     await ctx.reply(message, { parse_mode: "MarkdownV2" });
   } catch (error) {
     console.error("Failed to send MarkdownV2 message:", error);
-    // Fallback to plain text if MarkdownV2 parsing fails
     await ctx.reply(
       "Error displaying reminders. Here they are in plain text:\n\n" +
         userReminders

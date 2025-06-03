@@ -1,13 +1,11 @@
 import { Composer } from "telegraf";
-import { local, store } from "../store";
+import { store } from "../store";
 import { extractReminder } from "../services/openai";
 import { scheduleNotification } from "../services/cron";
 import { wizardMiddleware } from "./wizard";
-import { generateShortCode, getScheduleDateTime } from "../utils";
 import { AIContext } from "../types/app";
+import { generateShortCode, getScheduleDateTime } from "../utils";
 import { ReminderData, StatusType, StoredReminder } from "../types";
-import { format } from "date-fns";
-import { enGB } from "date-fns/locale";
 
 const composer = new Composer<AIContext>();
 
@@ -16,7 +14,8 @@ composer.on("text", wizardMiddleware, async (ctx) => {
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText, false);
+  const content = await extractReminder(messageText, true);
+  console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
     const code = generateShortCode();
@@ -30,6 +29,7 @@ composer.on("text", wizardMiddleware, async (ctx) => {
     }
 
     const scheduleDateTime = getScheduleDateTime(data.reminder);
+    console.log(scheduleDateTime);
     if (!scheduleDateTime) {
       await ctx.reply(
         "I couldn't understand the date/time for the reminder. Please try again."
@@ -53,11 +53,10 @@ composer.on("text", wizardMiddleware, async (ctx) => {
     try {
       const docId = await store.addReminder(newReminder);
       newReminder.id = docId;
-      local.add(newReminder);
       scheduleNotification(newReminder);
-      const schedule = new Date(scheduleDateTime);
-      const dateString = format(schedule, "dd/MM/yyyy", { locale: enGB });
-      const timeString = format(schedule, "HH:mm", { locale: enGB });
+
+      const dateString: string = scheduleDateTime.format("DD/MM/YYYY");
+      const timeString: string = scheduleDateTime.format("HH:mm");
 
       const message = `Got it\\! I'll remind you to "${task}" on ${dateString} at ${timeString}\n*Reminder Code:* \`${code}\``;
       await ctx.reply(message, {

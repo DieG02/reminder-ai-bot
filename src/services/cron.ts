@@ -1,3 +1,4 @@
+import dayjs, { Dayjs } from "dayjs";
 import { CronJob } from "cron";
 import { bot } from "../index";
 import { local, store } from "../store";
@@ -6,8 +7,8 @@ import { getNextRepeatDate } from "../utils";
 
 export let scheduledJobs: { [key: string]: CronJob } = {};
 
-const isPast = (date: string | Date) => {
-  return new Date(date) < new Date();
+const isPast = (date: Dayjs) => {
+  return date < dayjs();
 };
 
 const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
@@ -23,13 +24,13 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
     if (reminder.repeat) {
       // 🔁 Reschedule
       const nextDate = getNextRepeatDate(
-        new Date(reminder.scheduleDateTime),
+        reminder.scheduleDateTime,
         reminder.repeat
       );
 
       if (
         nextDate &&
-        (!reminder.repeatUntil || nextDate <= new Date(reminder.repeatUntil))
+        (!reminder.repeatUntil || nextDate <= dayjs(reminder.repeatUntil))
       ) {
         reminder.scheduleDateTime = nextDate;
 
@@ -65,18 +66,20 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
 
 export const scheduleNotification = (reminder: StoredReminder): void => {
   const jobId = `reminder-${reminder.id}`;
-  const timer = new Date(reminder.scheduleDateTime);
+  const timer = reminder.scheduleDateTime;
 
   if (isPast(timer)) {
     console.log(
-      `Reminder for "${reminder.task}" at ${reminder.scheduleDateTime} is in the past.`
+      `Reminder for "${
+        reminder.task
+      }" at ${reminder.scheduleDateTime.toLocaleString()} is in the past.`
     );
     store.deleteReminder(reminder.id);
     return;
   }
 
   const job = new CronJob(
-    timer,
+    timer.toDate(),
     () => deliverReminder(reminder, jobId), // onTick
     null, // onComplete
     true, // start

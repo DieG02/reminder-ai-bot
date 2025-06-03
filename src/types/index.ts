@@ -1,8 +1,8 @@
+import { Dayjs } from "dayjs";
 import { Timestamp } from "firebase-admin/firestore";
 
-export type RepeatType = "daily" | "weekly" | "monthly" | null;
-export type TimeUnitsType = "minutes" | "hours" | "days" | "weeks" | null;
-export type DateString = string | null;
+export type RepeatType = "daily" | "weekly" | "monthly";
+export type TimeUnitsType = "minutes" | "hours" | "days" | "weeks";
 
 export enum StatusType {
   PENDING = "PENDING",
@@ -15,8 +15,8 @@ export interface ReminderData {
   status: StatusType;
   reminder: ReminderBody; // TODO: Replace to body
   repeat?: RepeatType;
-  repeatCount?: number | null;
-  repeatUntil?: DateString;
+  repeatCount?: number;
+  repeatUntil?: string;
   missing: string[] | "";
   roadmap?: string[]; // Optional
 }
@@ -26,7 +26,7 @@ export interface ReminderBody {
   time: string | null; // HH:mm
   task: string | null;
   relativeDuration: number | null;
-  relativeUnit: TimeUnitsType;
+  relativeUnit: TimeUnitsType | null;
 }
 
 // Represents the structure of a reminder document in Firestore
@@ -38,8 +38,8 @@ export interface FirestoreReminderDoc {
   isScheduled: boolean;
   code: string;
   repeat?: RepeatType;
-  repeatCount?: number | null;
-  repeatUntil?: DateString;
+  repeatCount?: number;
+  repeatUntil?: string;
 }
 
 // Represents the structure of a reminder used within our application's logic
@@ -47,11 +47,14 @@ export interface StoredReminder {
   id: string; // Document ID from Firestore
   chatId: number;
   task: string;
-  scheduleDateTime: Date; // JavaScript Date object
+  scheduleDateTime: Dayjs; // JavaScript Date object
   jobId: string;
   isScheduled: boolean;
   code: string;
-  repeat?: RepeatType;
+  repeat?: RepeatType | null;
   repeatCount?: number | null;
-  repeatUntil?: DateString;
+  repeatUntil?: string | null;
+  // creatorId: data.creatorId,
+  // isGroupReminder: data.isGroupReminder || false,
+  // targetUsers: data.targetUsers || [],
 }

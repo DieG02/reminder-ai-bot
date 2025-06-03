@@ -1,20 +1,22 @@
-import { parse, add } from "date-fns";
-import { enGB } from "date-fns/locale";
-import { addMinutes, addHours, addDays, addWeeks, addMonths } from "date-fns";
+import dayjs, { Dayjs } from "dayjs";
 import { RepeatType, ReminderBody } from "../types/";
 
 /**
  * Calculate the next date in a 'repeat' task
  */
-export const getNextRepeatDate = (current: Date, repeat: RepeatType): Date => {
+export const getNextRepeatDate = (
+  current: Dayjs,
+  repeat: RepeatType,
+  relativeDuration: number = 1
+): Dayjs => {
   if (!repeat) return current;
   return (
     {
-      minutely: () => addMinutes(current, 1),
-      hourly: () => addHours(current, 1),
-      daily: () => addDays(current, 1),
-      weekly: () => addWeeks(current, 1),
-      monthly: () => addMonths(current, 1),
+      minutely: () => current.add(relativeDuration, "minute"),
+      hourly: () => current.add(relativeDuration, "hour"),
+      daily: () => current.add(relativeDuration, "day"),
+      weekly: () => current.add(relativeDuration, "week"),
+      monthly: () => current.add(relativeDuration, "month"),
     }[repeat]?.() ?? current
   );
 };
@@ -22,33 +24,44 @@ export const getNextRepeatDate = (current: Date, repeat: RepeatType): Date => {
 /**
  * Standarize date and time with the ReminderBody type
  */
-export const getScheduleDateTime = (input: ReminderBody): Date | null => {
-  const now = new Date();
+export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
+  const now = dayjs();
 
   // Case 1: Has absolute date and time
   if (input.date && input.time) {
-    const parsedDate = parse(
-      `${input.date} ${input.time}`,
-      "dd/MM/yyyy HH:mm",
-      now,
-      { locale: enGB }
-    );
+    const parsed = dayjs(`${input.date} ${input.time}`, "DD/MM/YYYY HH:mm");
+    return parsed.isValid() ? parsed : null;
+  }
 
-    if (!isNaN(parsedDate.getTime())) {
-      return parsedDate;
+  // Case 2: Has relative duration
+  if (input.relativeDuration !== null && input.relativeUnit !== null) {
+    let base = now.add(input.relativeDuration, input.relativeUnit);
+
+    if (input.time) {
+      const [hours, minutes] = input.time.split(":").map(Number);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        base = base.set("hour", hours).set("minute", minutes).set("second", 0);
+      }
     }
-
-    return null; // invalid
+    return base;
   }
 
-  // Case 2: Has relative time info
-  if (input.relativeDuration && input.relativeUnit) {
-    return add(now, {
-      [input.relativeUnit]: input.relativeDuration,
-    });
+  // Case 3: Has only time, maybe recurring (e.g., daily at 08:00)
+  if (input.time) {
+    const [hours, minutes] = input.time.split(":").map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      let base = now.set("hour", hours).set("minute", minutes).set("second", 0);
+
+      // If the time has already passed today, move to tomorrow
+      if (base.isBefore(now)) {
+        base = base.add(1, "day");
+      }
+
+      return base;
+    }
   }
 
-  return null; // neither case
+  return null;
 };
 
 /**

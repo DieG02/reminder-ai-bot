@@ -15,7 +15,6 @@ export const store = {
   updateReminder: firestore.updateReminder,
   addReminder: firestore.addReminder,
   deleteReminder: firestore.deleteReminder,
-  getNextUserReminder: firestore.getNextUserReminder,
   getUserAgenda: firestore.getUserAgenda,
   getAllUserReminders: firestore.getAllUserReminders,
   clearUserReminders: firestore.clearUserReminders,
