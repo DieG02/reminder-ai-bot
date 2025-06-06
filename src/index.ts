@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
+import express from "express";
 import { Telegraf, session } from "telegraf";
 // import { message } from "telegraf/filters";
 import { rescheduleAllReminders, scheduledJobs } from "./services/cron";
@@ -8,8 +9,13 @@ import commandHandlers from "./handlers/commands";
 import messageHandlers from "./handlers/messages";
 import { AIContext } from "./types/app";
 
-// Initialize bot
-export const bot = new Telegraf<AIContext>(process.env.TELEGRAM_BOT_TOKEN!);
+// -- Environment Variables --
+const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
+const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN!;
+const PORT = parseInt(process.env.PORT || "3000");
+
+// Initialize bot with token from env
+export const bot = new Telegraf<AIContext>(TOKEN);
 
 // -- Session middleware --
 bot.use(session());
@@ -32,25 +38,40 @@ bot.use(messageHandlers);
 (async () => {
   console.log("Bot starting...");
   await rescheduleAllReminders();
-  await bot.launch();
-  console.log("Bot is running!");
+
+  const useWebhook = !!process.env.WEBHOOK_DOMAIN;
+
+  if (useWebhook) {
+    const app = express();
+    app.use(express.json());
+
+    const path = `/webhook/${bot.secretPathComponent()}`;
+
+    // Register webhook with Telegram
+    await bot.telegram.setWebhook(`${WEBHOOK_DOMAIN}${path}`);
+    app.use(bot.webhookCallback(path));
+
+    app.get("/", (_, res) => res.send("Reminder AI Bot is alive!"));
+
+    app.listen(PORT, () => {
+      console.log(`🚀 Webhook server listening on port ${PORT}`);
+    });
+  } else {
+    // Fallback to polling (local dev, no domain)
+    await bot.launch();
+    console.log("🤖 Bot is running with long polling");
+  }
 })();
 
 // --- Graceful Shutdown ---
-process.once("SIGINT", () => {
-  console.log("SIGINT received, shutting down...");
+const shutdown = async (signal: string) => {
+  console.log(`${signal} received, shutting down...`);
   for (const jobId in scheduledJobs) {
     scheduledJobs[jobId].stop?.();
   }
-  bot.stop("SIGINT");
+  await bot.stop(signal);
   process.exit(0);
-});
+};
 
-process.once("SIGTERM", () => {
-  console.log("SIGTERM received, shutting down...");
-  for (const jobId in scheduledJobs) {
-    scheduledJobs[jobId].stop?.();
-  }
-  bot.stop("SIGTERM");
-  process.exit(0);
-});
+process.once("SIGINT", () => shutdown("SIGINT"));
+process.once("SIGTERM", () => shutdown("SIGTERM"));

@@ -14,7 +14,7 @@ composer.on("text", wizardMiddleware, async (ctx) => {
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText, true);
+  const content = await extractReminder(messageText, false);
   console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
