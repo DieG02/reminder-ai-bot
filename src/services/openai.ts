@@ -2,6 +2,8 @@ import axios from "axios";
 import context from "./prompt";
 import { examples } from "../utils/dumb";
 
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
 export const extractReminder = async (user_input: string, dumb?: boolean) => {
   if (dumb) {
     const date = new Date();
@@ -19,7 +21,7 @@ export const extractReminder = async (user_input: string, dumb?: boolean) => {
     },
     {
       headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
     }
