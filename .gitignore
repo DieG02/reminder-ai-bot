@@ -3,7 +3,7 @@ node_modules/
 dist/
 
 # Propmt
-src/playground/
+playground/
 src/config/firebase-services.json
 src/utils/dumb.ts
 
