@@ -157,14 +157,9 @@ export const getUserAgenda = async (
       timeZone: "Europe/Rome",
     });
 
-    // Create a date object from that string
-    const localNow = new Date(nowInTimeZone);
-
     // Build start and end of day
-    const startDate = new Date(localNow);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(localNow);
-    endDate.setHours(23, 59, 59, 999);
+    const startDate = dayjs(nowInTimeZone).startOf("day").toDate();
+    const endDate = dayjs(nowInTimeZone).endOf("day").toDate();
 
     const snapshot = await db
       .collection(REMINDERS_COLLECTION)

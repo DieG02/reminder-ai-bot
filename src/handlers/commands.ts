@@ -2,6 +2,7 @@ import { Composer } from "telegraf";
 import { local, store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
+import dayjs from "dayjs";
 
 // Create a single Composer instance to hold all commands
 const composer = new Composer<AIContext>();
@@ -29,10 +30,11 @@ composer.command("help", async (ctx: AIContext) => {
       `/help \\- Show help message\n` +
       `/info \\- Learn how the bot works\n\n` +
       `/name \\- Set your username\n` +
-      `/timezone \\- Set your timezone\n\n` +
+      // `/timezone \\- Set your timezone\n\n` +
       `/next \\- Show your next reminder\n` +
+      `/agenda \\- Show all reminders for today\n` +
       `/all \\- Show all your reminders\n` +
-      `/update \\- Update a reminder\n` +
+      // `/update \\- Update a reminder\n` +
       `/delete \\- Delete a reminder\n` +
       `/clear \\- Delete all reminders`,
     { parse_mode: "MarkdownV2" }
@@ -43,7 +45,8 @@ composer.command("info", async (ctx: AIContext) => {
   await ctx.reply(
     `📌 *Bot Workflow & Features*\n\n` +
       `1\\. *Set Up Your Profile*\n` +
-      `Use /name to define your username or set your local time using /timezone\\.\n\n` +
+      `Use /name to define your username\n\n` +
+      // `or set your local time using /timezone\\.\n\n` +
       `2\\. *Create Reminders*\n` +
       `You can create reminders by sending a message like:\n` +
       `"Remind me to call John tomorrow at 3 PM"\n\n` +
@@ -58,10 +61,10 @@ composer.command("info", async (ctx: AIContext) => {
   );
 });
 
-composer.command("local", async (ctx: AIContext) => {
-  const localStorage = local.toArray();
-  console.log(localStorage);
-});
+// composer.command("local", async (ctx: AIContext) => {
+//   const localStorage = local.toArray();
+//   console.log(localStorage);
+// });
 
 composer.command("name", async (ctx: AIContext) => {
   ctx.session = ctx.session || {};
@@ -69,11 +72,14 @@ composer.command("name", async (ctx: AIContext) => {
   await ctx.reply("What is your username?");
 });
 
-composer.command("timezone", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "timezone";
-  await ctx.reply("What is your timezone?");
-});
+// composer.command("timezone", async (ctx: AIContext) => {
+//   ctx.session = ctx.session || {};
+//   ctx.session.waiting = "timezone";
+//   await ctx.reply(
+//     "Please type your timezone like `Region/City` (e.g., Europe/Rome, America/New_York, Asia/Tokyo)",
+//     { parse_mode: "Markdown" }
+//   );
+// });
 
 // `/new - Create a new reminder`
 // composer.command("new", async (ctx: AIContext) => {
@@ -112,15 +118,15 @@ composer.command("agenda", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
   const agenda = await store.getUserAgenda(chatId);
-  if (!agenda) {
+  if (!agenda?.length) {
     return ctx.reply("You have no pending reminders for today.");
   }
 
   let message = `*Here is your agenda for today:*\n\n`;
 
   agenda.map((reminder, i) => {
-    const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString();
+    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
@@ -155,8 +161,8 @@ composer.command("all", async (ctx) => {
   let message = `*Here are your pending reminders:*\n\n`;
 
   userReminders.map((reminder, i) => {
-    const scheduleDate = reminder.scheduleDateTime;
-    const formattedDate = scheduleDate.toLocaleString();
+    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
     message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
