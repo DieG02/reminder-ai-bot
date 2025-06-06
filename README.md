@@ -1,6 +1,6 @@
-# 🧠 reminder-ai-bot [Persi]
+# 🚀 reminder-ai-bot
 
-A smart Telegram bot that helps you **schedule reminders in natural language** and delivers them directly via Telegram messages. Just talk to it like you would to a human — the bot takes care of understanding and scheduling it for you. No complex commands needed.
+A smart AI Telegram bot that helps you **schedule reminders in natural language** and delivers them directly via Telegram messages. Just talk to it like you would to a human — the bot takes care of understanding and scheduling it for you. No complex commands needed.
 
 ---
 
@@ -14,11 +14,11 @@ These are the commands the bot currently understands:
 | `/help`      | Show available commands and help     |
 | `/info`      | Learn how the bot works              |
 | `/name`      | Set your username                    |
-| `/timezone`  | Set your timezone                    |
+| `/timezone`  | Set your timezone `(soon)`           |
 | `/next`      | Show your next upcoming reminder     |
 | `/agenda`    | Show all reminders for today         |
 | `/all`       | Show all your scheduled reminders    |
-| `/update`    | Update an existing reminder          |
+| `/update`    | Update an existing reminder `(soon)` |
 | `/delete`    | Delete a specific reminder           |
 | `/clear`     | Delete all your reminders            |
 
