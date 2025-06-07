@@ -55,8 +55,12 @@ composer.on("text", wizardMiddleware, async (ctx) => {
       newReminder.id = docId;
       scheduleNotification(newReminder);
 
-      const dateString: string = scheduleDateTime.format("DD/MM/YYYY");
-      const timeString: string = scheduleDateTime.format("HH:mm");
+      const dateString: string = scheduleDateTime
+        .tz("Europe/Rome")
+        .format("DD/MM/YYYY");
+      const timeString: string = scheduleDateTime
+        .tz("Europe/Rome")
+        .format("HH:mm");
 
       const message = `Got it\\! I'll remind you to "${task}" on ${dateString} at ${timeString}\n*Reminder Code:* \`${code}\``;
       await ctx.reply(message, {

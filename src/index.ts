@@ -39,17 +39,17 @@ bot.use(messageHandlers);
   console.log("Bot starting...");
   await rescheduleAllReminders();
 
-  const useWebhook = !!process.env.WEBHOOK_DOMAIN;
-
-  if (useWebhook) {
+  if (!!WEBHOOK_DOMAIN) {
     const app = express();
     app.use(express.json());
 
-    const path = `/webhook/${bot.secretPathComponent()}`;
-
-    // Register webhook with Telegram
-    await bot.telegram.setWebhook(`${WEBHOOK_DOMAIN}${path}`);
-    app.use(bot.webhookCallback(path));
+    await bot.launch({
+      webhook: {
+        domain: WEBHOOK_DOMAIN,
+        hookPath: `/webhook/${process.env.TELEGRAM_BOT_TOKEN}`,
+        port: PORT,
+      },
+    });
 
     app.get("/", (_, res) => res.send("Reminder AI Bot is alive!"));
 

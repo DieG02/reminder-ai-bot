@@ -1,8 +1,14 @@
 import { Composer } from "telegraf";
-import { local, store } from "../store";
+import { store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
+
+// Extend dayjs with necessary plugins
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 // Create a single Composer instance to hold all commands
 const composer = new Composer<AIContext>();
@@ -125,7 +131,7 @@ composer.command("agenda", async (ctx: AIContext) => {
   let message = `*Here is your agenda for today:*\n\n`;
 
   agenda.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const scheduleDate = dayjs(reminder.scheduleDateTime).tz("Europe/Rome");
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
@@ -161,7 +167,7 @@ composer.command("all", async (ctx) => {
   let message = `*Here are your pending reminders:*\n\n`;
 
   userReminders.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const scheduleDate = dayjs(reminder.scheduleDateTime).tz("Europe/Rome");
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
