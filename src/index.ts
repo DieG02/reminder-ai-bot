@@ -10,6 +10,7 @@ import messageHandlers from "./handlers/messages";
 import { AIContext } from "./types/app";
 
 // -- Environment Variables --
+const RELEASE = process.env.MODE;
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const WEBHOOK_DOMAIN = process.env.WEBHOOK_DOMAIN!;
 const PORT = parseInt(process.env.PORT || "3000");
@@ -37,29 +38,55 @@ bot.use(messageHandlers);
 // --- Bot Startup ---
 (async () => {
   console.log("Bot starting...");
-  await rescheduleAllReminders();
+  await rescheduleAllReminders(); // Reschedule reminders on every startup
 
-  if (!!WEBHOOK_DOMAIN) {
+  if (RELEASE === "PRODUCTION") {
+    // --- PRODUCTION/DEPLOYMENT MODE (WEBHOOKS) ---
+    // In production, WEBHOOK_DOMAIN must be set in your Render/Northflank environment variables.
+    if (!WEBHOOK_DOMAIN) {
+      console.error(
+        "WEBHOOK_DOMAIN environment variable is not set in production mode!"
+      );
+      process.exit(1); // Exit if critical config is missing
+    }
+
     const app = express();
-    app.use(express.json());
+    app.use(express.json()); // Middleware to parse JSON request bodies
 
-    await bot.launch({
-      webhook: {
-        domain: WEBHOOK_DOMAIN,
-        hookPath: `/webhook/${process.env.TELEGRAM_BOT_TOKEN}`,
-        port: PORT,
-      },
-    });
+    // Create a secure webhook path
+    const telegramWebhookEndpoint = `/bot${bot.secretPathComponent()}`;
 
+    // Telegraf's webhook callback is used here
+    app.post(telegramWebhookEndpoint, (req, res) =>
+      bot.handleUpdate(req.body, res)
+    );
+
+    // Optional: A simple route for health checks or debugging
     app.get("/", (_, res) => res.send("Reminder AI Bot is alive!"));
 
-    app.listen(PORT, () => {
+    app.listen(PORT, async () => {
       console.log(`🚀 Webhook server listening on port ${PORT}`);
+      // Set the webhook with Telegram
+      try {
+        await bot.telegram.setWebhook(
+          `${WEBHOOK_DOMAIN}${telegramWebhookEndpoint}`
+        );
+        console.log(
+          `Telegram webhook set to: ${WEBHOOK_DOMAIN}${telegramWebhookEndpoint}`
+        );
+      } catch (error) {
+        console.error("Failed to set Telegram webhook:", error);
+        // Important: In production, if webhook setup fails, your bot won't receive updates.
+        process.exit(1);
+      }
     });
+    console.log("🤖 Bot is running in Webhook Mode.");
   } else {
-    // Fallback to polling (local dev, no domain)
+    // --- DEVELOPMENT MODE (LONG POLLING) ---
+    // In dev mode, we just launch the bot for long polling.
+    // WEBHOOK_DOMAIN is not needed for long polling.
     await bot.launch();
-    console.log("🤖 Bot is running with long polling");
+    console.log("🤖 Bot is running with long polling (development mode)");
   }
 })();
 
@@ -69,7 +96,7 @@ const shutdown = async (signal: string) => {
   for (const jobId in scheduledJobs) {
     scheduledJobs[jobId].stop?.();
   }
-  await bot.stop(signal);
+  await bot.stop(signal); // Ensure bot stops gracefully
   process.exit(0);
 };
 
