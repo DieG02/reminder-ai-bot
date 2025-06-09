@@ -3,13 +3,13 @@ dotenv.config();
 
 import express from "express";
 import { Telegraf, session } from "telegraf";
-// import { message } from "telegraf/filters";
 import { rescheduleAllReminders, scheduledJobs } from "./services/cron";
 import commandHandlers from "./handlers/commands";
+import wizardHandlers from "./handlers/wizard";
 import messageHandlers from "./handlers/messages";
 import { AIContext } from "./types/app";
 
-// -- Environment Variables --
+// --- Environment Variables ---
 const RELEASE = process.env.MODE;
 const PORT = process.env.PORT || "8080";
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
@@ -18,10 +18,10 @@ const WEBHOOK_URL = process.env.WEBHOOK_URL;
 // Initialize bot with token from env
 export const bot = new Telegraf<AIContext>(TOKEN);
 
-// -- Session middleware --
+// --- Session middleware ---
 bot.use(session());
 
-// -- Handle ALL Errors --
+// --- Handle ALL Errors ---
 bot.catch((err: unknown, ctx: AIContext) => {
   console.error(`Error for ${ctx.updateType}:`, err);
   if (ctx.chat) {
@@ -29,8 +29,11 @@ bot.catch((err: unknown, ctx: AIContext) => {
   }
 });
 
-// -- Register the ALL commands handler --
+// --- Command Handler ---
 bot.use(commandHandlers);
+
+// -- Wizard Handler ---
+bot.use(wizardHandlers);
 
 // --- Message Handler ---
 bot.use(messageHandlers);

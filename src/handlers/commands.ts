@@ -14,9 +14,9 @@ dayjs.extend(timezone);
 const composer = new Composer<AIContext>();
 
 composer.command("start", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
+  ctx.session = {};
   ctx.session.count = 0;
-  ctx.session.username = ctx.session.username || ctx.from?.username;
+  ctx.session.username = ctx.from?.username;
   await ctx.reply(
     `👋 Welcome, *${ctx.session.username}*\\!\n\n` +
       `I'm here to help you stay organized with smart reminders\\.\n\n` +
@@ -66,33 +66,6 @@ composer.command("info", async (ctx: AIContext) => {
     { parse_mode: "MarkdownV2" }
   );
 });
-
-// composer.command("local", async (ctx: AIContext) => {
-//   const localStorage = local.toArray();
-//   console.log(localStorage);
-// });
-
-composer.command("name", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "name";
-  await ctx.reply("What is your username?");
-});
-
-// composer.command("timezone", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "timezone";
-//   await ctx.reply(
-//     "Please type your timezone like `Region/City` (e.g., Europe/Rome, America/New_York, Asia/Tokyo)",
-//     { parse_mode: "Markdown" }
-//   );
-// });
-
-// `/new - Create a new reminder`
-// composer.command("new", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "name";
-//   await ctx.reply("What is your name?");
-// });
 
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
@@ -186,28 +159,6 @@ composer.command("all", async (ctx) => {
           .join("\n")
     );
   }
-});
-
-// composer.command("update", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "update";
-//   await ctx.reply(
-//     "Enter the reminder code. Tip: use /all to get all your reminders."
-//   );
-// });
-
-composer.command("delete", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "delete";
-  await ctx.reply(
-    "Enter the reminder code, you can use /all to get the list of all your pending reminders."
-  );
-});
-
-composer.command("clear", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "clear";
-  await ctx.reply(`To confirm, type "${ctx.from?.username}" in the box below:`);
 });
 
 export default composer;
