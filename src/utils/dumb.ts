@@ -2,6 +2,34 @@ export const examples = [
   {
     status: "COMPLETED",
     reminder: {
+      task: "clean my room",
+      date: null,
+      time: null,
+      relativeDuration: 45,
+      relativeUnit: "minutes",
+    },
+    repeat: null,
+    repeatCount: null,
+    repeatUntil: null,
+    missing: null,
+  },
+  {
+    status: "COMPLETED",
+    reminder: {
+      task: "brush my teeth",
+      date: null,
+      time: null,
+      relativeDuration: 1,
+      relativeUnit: "hours",
+    },
+    repeat: null,
+    repeatCount: null,
+    repeatUntil: null,
+    missing: null,
+  },
+  {
+    status: "COMPLETED",
+    reminder: {
       task: "give my best",
       date: null,
       time: "08:00",

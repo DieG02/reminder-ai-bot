@@ -42,7 +42,6 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
             );
             await store.deleteReminder(reminder.id);
             local.remove(reminder.id);
-            delete scheduledJobs[jobId];
             return;
           }
         }
