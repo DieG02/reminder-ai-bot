@@ -1,22 +1,17 @@
+import dayjs from "../lib/dayjs";
 import { Composer } from "telegraf";
 import { store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
-import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
-
-// Extend dayjs with necessary plugins
-dayjs.extend(utc);
-dayjs.extend(timezone);
 
 // Create a single Composer instance to hold all commands
 const composer = new Composer<AIContext>();
 
 composer.command("start", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
+  ctx.session = {};
   ctx.session.count = 0;
-  ctx.session.username = ctx.session.username || ctx.from?.username;
+  ctx.session.username = ctx.from?.username;
+  ctx.session.timezone = "Europe/Rome";
   await ctx.reply(
     `👋 Welcome, *${ctx.session.username}*\\!\n\n` +
       `I'm here to help you stay organized with smart reminders\\.\n\n` +
@@ -67,33 +62,6 @@ composer.command("info", async (ctx: AIContext) => {
   );
 });
 
-// composer.command("local", async (ctx: AIContext) => {
-//   const localStorage = local.toArray();
-//   console.log(localStorage);
-// });
-
-composer.command("name", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "name";
-  await ctx.reply("What is your username?");
-});
-
-// composer.command("timezone", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "timezone";
-//   await ctx.reply(
-//     "Please type your timezone like `Region/City` (e.g., Europe/Rome, America/New_York, Asia/Tokyo)",
-//     { parse_mode: "Markdown" }
-//   );
-// });
-
-// `/new - Create a new reminder`
-// composer.command("new", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "name";
-//   await ctx.reply("What is your name?");
-// });
-
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
 
@@ -131,7 +99,7 @@ composer.command("agenda", async (ctx: AIContext) => {
   let message = `*Here is your agenda for today:*\n\n`;
 
   agenda.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime).tz("Europe/Rome");
+    const scheduleDate = dayjs(reminder.scheduleDateTime);
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
@@ -167,7 +135,7 @@ composer.command("all", async (ctx) => {
   let message = `*Here are your pending reminders:*\n\n`;
 
   userReminders.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime).tz("Europe/Rome");
+    const scheduleDate = dayjs(reminder.scheduleDateTime);
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
@@ -186,28 +154,6 @@ composer.command("all", async (ctx) => {
           .join("\n")
     );
   }
-});
-
-// composer.command("update", async (ctx: AIContext) => {
-//   ctx.session = ctx.session || {};
-//   ctx.session.waiting = "update";
-//   await ctx.reply(
-//     "Enter the reminder code. Tip: use /all to get all your reminders."
-//   );
-// });
-
-composer.command("delete", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "delete";
-  await ctx.reply(
-    "Enter the reminder code, you can use /all to get the list of all your pending reminders."
-  );
-});
-
-composer.command("clear", async (ctx: AIContext) => {
-  ctx.session = ctx.session || {};
-  ctx.session.waiting = "clear";
-  await ctx.reply(`To confirm, type "${ctx.from?.username}" in the box below:`);
 });
 
 export default composer;

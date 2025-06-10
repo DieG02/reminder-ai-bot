@@ -2,19 +2,18 @@ import { Composer } from "telegraf";
 import { store } from "../store";
 import { extractReminder } from "../services/openai";
 import { scheduleNotification } from "../services/cron";
-import { wizardMiddleware } from "./wizard";
 import { AIContext } from "../types/app";
 import { generateShortCode, getScheduleDateTime } from "../utils";
 import { ReminderData, StatusType, StoredReminder } from "../types";
 
 const composer = new Composer<AIContext>();
 
-composer.on("text", wizardMiddleware, async (ctx) => {
+composer.on("text", async (ctx) => {
   ctx.session = ctx.session || {};
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText, false);
+  const content = await extractReminder(messageText);
   console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;

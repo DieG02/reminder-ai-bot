@@ -3,9 +3,10 @@ import context from "./prompt";
 import { examples } from "../utils/dumb";
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const HARDCODE = process.env.HARDCODE;
 
-export const extractReminder = async (user_input: string, dumb?: boolean) => {
-  if (dumb) {
+export const extractReminder = async (user_input: string) => {
+  if (HARDCODE == "TRUE") {
     const date = new Date();
     const index = date.getTime() % 10;
     return new Array(examples[0]);

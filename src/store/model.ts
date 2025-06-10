@@ -1,13 +1,7 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "../lib/dayjs";
+import { Dayjs } from "dayjs";
 import { StoredReminder } from "../types";
-import isBetween from "dayjs/plugin/isBetween";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
-
-// Extend dayjs with necessary plugins
-dayjs.extend(isBetween);
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isSameOrAfter);
+import { scheduledJobs } from "../services/cron";
 
 // --- Global State ---
 
@@ -46,6 +40,13 @@ class ReminderManager {
    * @returns `true` if the reminder was successfully removed, `false` otherwise
    */
   remove(id: string): boolean {
+    const reminder = this.getById(id);
+    const jobId = reminder?.jobId;
+    if (jobId && scheduledJobs[jobId]) {
+      scheduledJobs[jobId].stop();
+      delete scheduledJobs[jobId];
+      console.log(`Stopped and deleted cron job for reminder ID: ${id}`);
+    }
     return this._reminders.delete(id);
   }
 

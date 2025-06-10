@@ -1,4 +1,14 @@
 // --- Constants ---
 
 export const REMINDERS_COLLECTION = "reminders";
-export const NEXT_SCHEDULE_WINDOW = 14 * 24 * 60 * 60 * 1000;
+
+// --- Wizard Constants ---
+
+export enum Wizard {
+  CREATE = "CREATE_WIZARD",
+  UPDATE = "UPDATE_WIZARD",
+  USERNAME = "USERNAME_WIZARD",
+  TIMEZONE = "TIMEZONE_WIZARD",
+  DELETE = "DELETE_WIZARD",
+  CLEAR = "CLEAR_WIZARD",
+}

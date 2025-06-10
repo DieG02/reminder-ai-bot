@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "../lib/dayjs";
 import local from "./model";
 import { db } from "./index";
 import { firestore } from "firebase-admin";
@@ -218,10 +218,6 @@ export const getAllUserReminders = async (
         scheduleDateTime: dayjs(data.scheduleDateTime.toDate()),
       };
     });
-    local
-      .toArray()
-      .filter((r) => r.chatId === chatId)
-      .forEach((r) => local.remove(r.id));
     return userReminders;
   } catch (error) {
     console.error("Error listing reminders:", error);

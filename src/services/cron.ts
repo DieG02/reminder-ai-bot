@@ -1,4 +1,5 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "../lib/dayjs";
+import { Dayjs } from "dayjs";
 import { CronJob } from "cron";
 import { bot } from "../index";
 import { local, store } from "../store";
@@ -42,7 +43,6 @@ const deliverReminder = async (reminder: StoredReminder, jobId: string) => {
             );
             await store.deleteReminder(reminder.id);
             local.remove(reminder.id);
-            delete scheduledJobs[jobId];
             return;
           }
         }
