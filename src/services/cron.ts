@@ -1,4 +1,5 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "../lib/dayjs";
+import { Dayjs } from "dayjs";
 import { CronJob } from "cron";
 import { bot } from "../index";
 import { local, store } from "../store";

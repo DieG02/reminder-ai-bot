@@ -1,4 +1,4 @@
-import dayjs from "dayjs";
+import dayjs from "../lib/dayjs";
 import local from "./model";
 import { db } from "./index";
 import { firestore } from "firebase-admin";

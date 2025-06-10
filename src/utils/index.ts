@@ -1,6 +1,6 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "../lib/dayjs";
+import { Dayjs } from "dayjs";
 import { RepeatType, ReminderBody } from "../types/";
-
 /**
  * Calculate the next date in a 'repeat' task
  */
@@ -49,16 +49,14 @@ export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
   // Case 3: Has only time, maybe recurring (e.g., daily at 08:00)
   if (input.time) {
     const [hours, minutes] = input.time.split(":").map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      let base = now.set("hour", hours).set("minute", minutes).set("second", 0);
+    let base = now.set("hour", hours).set("minute", minutes).set("second", 0);
 
-      // If the time has already passed today, move to tomorrow
-      if (base.isBefore(now)) {
-        base = base.add(1, "day");
-      }
-
-      return base;
+    // If the time has already passed today, move to tomorrow
+    if (base.isBefore(now)) {
+      base = base.add(1, "day");
     }
+
+    return base;
   }
 
   return null;

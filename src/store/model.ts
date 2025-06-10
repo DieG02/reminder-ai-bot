@@ -1,14 +1,7 @@
-import dayjs, { Dayjs } from "dayjs";
+import dayjs from "../lib/dayjs";
+import { Dayjs } from "dayjs";
 import { StoredReminder } from "../types";
-import isBetween from "dayjs/plugin/isBetween";
-import isSameOrBefore from "dayjs/plugin/isSameOrBefore";
-import isSameOrAfter from "dayjs/plugin/isSameOrAfter";
 import { scheduledJobs } from "../services/cron";
-
-// Extend dayjs with necessary plugins
-dayjs.extend(isBetween);
-dayjs.extend(isSameOrBefore);
-dayjs.extend(isSameOrAfter);
 
 // --- Global State ---
 
