@@ -1,9 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 
-import express from "express";
 import { Telegraf, session } from "telegraf";
-// import { message } from "telegraf/filters";
 import { rescheduleAllReminders, scheduledJobs } from "./services/cron";
 import commandHandlers from "./handlers/commands";
 import messageHandlers from "./handlers/messages";
@@ -11,7 +9,7 @@ import { AIContext } from "./types/app";
 
 // -- Environment Variables --
 const RELEASE = process.env.MODE;
-const PORT = process.env.PORT || "8080";
+const PORT = process.env.PORT;
 const TOKEN = process.env.TELEGRAM_BOT_TOKEN!;
 const WEBHOOK_URL = process.env.WEBHOOK_URL;
 
@@ -41,8 +39,7 @@ bot.use(messageHandlers);
   await rescheduleAllReminders();
 
   if (RELEASE === "PRODUCTION") {
-    // --- PRODUCTION/DEPLOYMENT MODE (WEBHOOKS) ---
-    // In production, WEBHOOK_URL must be set in your Render/Northflank environment variables.
+    // --- PRODUCTION MODE (WEBHOOKS) ---
     if (!WEBHOOK_URL) {
       console.error(
         "WEBHOOK_URL environment variable is not set in production mode!"
@@ -50,33 +47,29 @@ bot.use(messageHandlers);
       process.exit(1);
     }
 
-    const app = express();
-    app.use(express.json());
-
-    // Create a secure webhook path
-    const telegramPath = `/bot${bot.secretPathComponent()}`;
-    const webhook = `${WEBHOOK_URL}${telegramPath}`;
-
-    app.use(bot.webhookCallback(telegramPath));
-    app.get("/", (_, res) => res.send("Reminder AI Bot is alive!"));
-
-    app.listen(PORT, async () => {
+    try {
+      await bot.launch({
+        webhook: {
+          domain: WEBHOOK_URL,
+          port: PORT ? parseInt(PORT) : 8080,
+        },
+      });
       console.log(`🚀 Webhook server listening on port ${PORT}`);
-      try {
-        await bot.telegram.setWebhook(webhook);
-        console.log(`Telegram webhook set to: ${webhook}`);
-      } catch (error) {
-        console.error("Failed to set Telegram webhook:", error);
-        process.exit(1);
-      }
-    });
-    console.log("🤖 Bot is running in Webhook Mode.");
+      console.log(`Telegram webhook set to: ${WEBHOOK_URL}`);
+      console.log("🤖 Bot is running in Webhook Mode.");
+    } catch (error) {
+      console.error("Error starting bot in webhook mode:", error);
+      process.exit(1);
+    }
   } else {
     // --- DEVELOPMENT MODE (LONG POLLING) ---
-    // In dev mode, we just launch the bot for long polling.
-    // WEBHOOK_URL is not needed for long polling.
-    await bot.launch();
-    console.log("🤖 Bot is running with long polling (development mode)");
+    try {
+      await bot.launch();
+      console.log("🤖 Bot is running with long polling (development mode)");
+    } catch (error) {
+      console.error("Error starting bot in long polling mode:", error);
+      process.exit(1);
+    }
   }
 })();
 
