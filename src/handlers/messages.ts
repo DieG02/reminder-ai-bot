@@ -13,7 +13,7 @@ composer.on("text", async (ctx) => {
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText, true);
+  const content = await extractReminder(messageText);
   console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
