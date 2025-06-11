@@ -8,6 +8,7 @@ export interface SessionData extends Scenes.WizardSession {
   services?: string[];
   waiting?: string;
   timezone?: string;
+  timezoneMatches?: string[]; // Alternative during timezone
 
   current?: number; // By ID
   body?: ReminderBody; // Body structure only

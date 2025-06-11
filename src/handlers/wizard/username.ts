@@ -9,7 +9,6 @@ const usernameWizard = new Scenes.WizardScene<AIContext>(
     await ctx.reply("👤 What's your username?");
     return ctx.wizard.next();
   },
-
   async (ctx) => {
     if (!("text" in ctx.message!)) return ctx.scene.leave();
 

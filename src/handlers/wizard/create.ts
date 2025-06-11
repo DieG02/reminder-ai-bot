@@ -30,7 +30,6 @@ const createWizard = new Scenes.WizardScene<AIContext>(
     }
     await ctx.reply("⚠️ Please provide a valid reminder name.");
   },
-
   async (ctx) => {
     if (!("text" in ctx.message!)) return ctx.scene.leave();
 
@@ -42,7 +41,6 @@ const createWizard = new Scenes.WizardScene<AIContext>(
     }
     await ctx.reply("⚠️ Please provide a valid date.");
   },
-
   async (ctx) => {
     if (!("text" in ctx.message!)) return ctx.scene.leave();
 

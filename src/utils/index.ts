@@ -1,6 +1,7 @@
 import dayjs from "../lib/dayjs";
 import { Dayjs } from "dayjs";
 import { RepeatType, ReminderBody } from "../types/";
+import { getTimeZones, TimeZone } from "@vvo/tzdb";
 /**
  * Calculate the next date in a 'repeat' task
  */
@@ -85,4 +86,29 @@ export function generateShortCode(): string {
  */
 export const escapeMarkdownV2 = (text: string): string => {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+};
+
+/**
+ * Helper function to search between common timezones
+ */
+export const searchTimezones = (query: string) => {
+  const q = query.toLowerCase();
+
+  return getTimeZones({ includeUtc: true })
+    .filter((tz: TimeZone) => {
+      return (
+        tz.name.toLowerCase().includes(q) ||
+        tz.countryName.toLowerCase().includes(q) ||
+        tz.mainCities.some((c) => c.toLowerCase().includes(q)) ||
+        tz.alternativeName.toLowerCase().includes(q)
+      );
+    })
+    .slice(0, 5)
+    .map((tz: TimeZone) => ({
+      name: tz.name,
+      label: tz.abbreviation || tz.alternativeName,
+      offset: tz.rawOffsetInMinutes,
+      country: tz.countryName,
+      cities: tz.mainCities,
+    }));
 };
