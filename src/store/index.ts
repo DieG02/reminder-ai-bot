@@ -3,10 +3,20 @@ import * as firestore from "./firebase";
 import model from "./model";
 
 // --- Firebase Initialization ---
-const serviceAccount = require(process.env.GOOGLE_CREDENTIALS_PATH!);
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
+
+if (!admin.apps.length) {
+  const serviceAccountJson = Buffer.from(
+    process.env.GOOGLE_SERVICES_BASE64!,
+    "base64"
+  ).toString("utf8");
+
+  const serviceAccount = JSON.parse(serviceAccountJson);
+
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
+}
+
 export const db = admin.firestore();
 export const local = model;
 
