@@ -1,5 +1,6 @@
 import * as admin from "firebase-admin";
 import * as firestore from "./firebase";
+import * as user from "./user";
 import model from "./model";
 
 // --- Firebase Initialization ---
@@ -28,4 +29,6 @@ export const store = {
   getUserAgenda: firestore.getUserAgenda,
   getAllUserReminders: firestore.getAllUserReminders,
   clearUserReminders: firestore.clearUserReminders,
+  getUserProfile: user.getUserProfile,
+  saveUserProfile: user.saveUserProfile,
 };

@@ -1,6 +1,7 @@
 // --- Constants ---
 
-export const REMINDERS_COLLECTION = "reminders";
+export const REMINDER_COLLECTION = "reminders";
+export const PROFILE_COLLECTION = "profile";
 
 // --- Wizard Constants ---
 

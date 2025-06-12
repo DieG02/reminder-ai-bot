@@ -2,7 +2,7 @@ import dayjs from "../lib/dayjs";
 import local from "./model";
 import { db } from "./index";
 import { firestore } from "firebase-admin";
-import { REMINDERS_COLLECTION } from "../types/constants";
+import { REMINDER_COLLECTION } from "../types/constants";
 import { FirestoreReminderDoc, StoredReminder } from "../types";
 
 // --- Persistence Logic with Firestore ---
@@ -15,12 +15,12 @@ export const loadReminders = async (): Promise<void> => {
     // and whose scheduleDateTime is not in the past (already processed/sent).
     const now = new Date();
     const snapshot = await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
       .get();
 
     const expiredSnapshot = await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(now))
       .get();
 
@@ -61,7 +61,7 @@ export const updateReminder = async (
   }
   try {
     await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .doc(reminder.id)
       .set(
         {
@@ -92,7 +92,7 @@ export const addReminder = async (
   reminder: Omit<StoredReminder, "id" | "jobId" | "isScheduled">
 ): Promise<string> => {
   try {
-    const docRef = await db.collection(REMINDERS_COLLECTION).add({
+    const docRef = await db.collection(REMINDER_COLLECTION).add({
       chatId: reminder.chatId,
       task: reminder.task,
       scheduleDateTime: firestore.Timestamp.fromDate(
@@ -122,7 +122,7 @@ export const deleteReminder = async (
 ): Promise<boolean> => {
   try {
     const snapshot = await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("code", "==", reminderCode)
       .limit(1) // limit to 1 for performance
       .get();
@@ -162,7 +162,7 @@ export const getUserAgenda = async (
     const endDate = dayjs(nowInTimeZone).endOf("day").toDate();
 
     const snapshot = await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("chatId", "==", chatId)
       .where("isScheduled", "==", true) // Only show active ones
       .where("scheduleDateTime", ">=", firestore.Timestamp.fromDate(startDate))
@@ -199,7 +199,7 @@ export const getAllUserReminders = async (
   try {
     const now = new Date();
     let query = db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("chatId", "==", chatId)
       .where("isScheduled", "==", true)
       .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
@@ -233,7 +233,7 @@ export const clearUserReminders = async (
 ): Promise<void> => {
   try {
     const snapshot = await db
-      .collection(REMINDERS_COLLECTION)
+      .collection(REMINDER_COLLECTION)
       .where("chatId", "==", chatId)
       .get();
 
