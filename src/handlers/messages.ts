@@ -1,6 +1,7 @@
 import { Composer } from "telegraf";
 import { store } from "../store";
-import { extractReminder } from "../services/openai";
+import { extract } from "../config/openai";
+import { ContentType } from "../config/context";
 import { scheduleNotification } from "../services/cron";
 import { AIContext } from "../types/app";
 import { generateShortCode, getScheduleDateTime } from "../utils";
@@ -13,7 +14,7 @@ composer.on("text", async (ctx) => {
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
 
-  const content = await extractReminder(messageText);
+  const content = await extract(messageText, ContentType.REMINDER);
   console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
@@ -28,7 +29,7 @@ composer.on("text", async (ctx) => {
     }
 
     const scheduleDateTime = getScheduleDateTime(data.reminder);
-    console.log(scheduleDateTime);
+    console.log(scheduleDateTime?.toDate());
     if (!scheduleDateTime) {
       await ctx.reply(
         "I couldn't understand the date/time for the reminder. Please try again."
