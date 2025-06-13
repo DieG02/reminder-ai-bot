@@ -3,17 +3,16 @@ import { Subscription } from "./subscription";
 
 export interface UserProfile {
   id: string; // from firestore
-  userId: string; // from telegram
   username: string;
   timezone: string;
-  createdAt: Timestamp;
-  updatedAt: Timestamp;
+  createdAt?: Timestamp;
+  updatedAt?: Timestamp;
 
   plan: Subscription; // Add this field to track the user's active plan
-  planExpiresAt?: Timestamp; // Optional: For paid plans, when does it expire?
-  trialEndsAt?: Timestamp;
+  planExpiresAt: Timestamp | null; // Optional: For paid plans, when does it expire?
+  trialEndsAt: Timestamp | null;
 
-  googleAuth: {
+  googleAuth?: {
     accessToken: string;
     refreshToken: string;
     expiresAt: Timestamp;

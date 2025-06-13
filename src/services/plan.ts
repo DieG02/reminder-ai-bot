@@ -8,35 +8,75 @@ import {
 import { UserProfile } from "../types/user";
 import { store } from "../store";
 import { local } from "../store";
+import { ErrorCode } from "../types/constants";
 
 export class PlanManager {
   private userId: string;
-  private profile?: UserProfile;
+  private _profile?: UserProfile;
 
-  constructor(userId: string, profile?: UserProfile) {
+  constructor(userId: string) {
     this.userId = userId;
-    this.profile = profile;
   }
 
-  private async ensureUserProfile(): Promise<UserProfile> {
-    if (!this.profile) {
+  get profile(): UserProfile | undefined {
+    return this._profile;
+  }
+
+  set profile(profile: UserProfile) {
+    this._profile = profile;
+  }
+
+  async loadProfile(): Promise<UserProfile> {
+    if (!this._profile) {
       const profile = await store.getUserProfile(this.userId);
       if (!profile) {
-        throw new Error(`User profile not found for ID: ${this.userId}`);
+        const error = new Error(`Profile not found for ${this.userId}`);
+        error.name = "ProfileNotFoundError";
+        // @ts-expect-error: allow setting custom property
+        error.code = ErrorCode.PROFILE_NOT_FOUND;
+        throw error;
       }
-      this.profile = profile;
+      this._profile = profile;
     }
-    return this.profile!;
+    return this._profile;
+  }
+
+  async createProfile(
+    initialProfile: Omit<
+      UserProfile,
+      "plan" | "trialEndsAt" | "updatedAt" | "createdAt"
+    >
+  ): Promise<UserProfile> {
+    const freePlan = PlanManager.getPlanDetails(Subscription.FREE);
+    if (!freePlan) {
+      throw new Error("Free plan configuration not found!");
+    }
+
+    const newUserProfile: UserProfile = {
+      ...initialProfile,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now(),
+      plan: Subscription.FREE,
+
+      planExpiresAt: null,
+      trialEndsAt: null,
+    };
+
+    await store.saveUserProfile(this.userId, newUserProfile);
+    this.profile = newUserProfile;
+
+    return newUserProfile;
   }
 
   static getPlanDetails(planId: Subscription): PlanDetails | undefined {
     return SUBSCRIPTION_CONFIG.find((plan) => plan.id === planId);
   }
 
-  async assignFreePlan(
+  static async assignFreePlan(
+    userId: string,
     initialProfile: Omit<UserProfile, "plan" | "updatedAt">
   ): Promise<UserProfile> {
-    const freePlan = PlanManager.getPlanDetails(Subscription.FREE);
+    const freePlan = this.getPlanDetails(Subscription.FREE);
     if (!freePlan) {
       throw new Error("Free plan configuration not found!");
     }
@@ -47,77 +87,70 @@ export class PlanManager {
       updatedAt: Timestamp.now(),
     };
 
-    await store.saveUserProfile(this.userId, newUserProfile);
-    this.profile = newUserProfile;
+    await store.saveUserProfile(userId, newUserProfile);
     return newUserProfile;
   }
 
   async upgradePlan(
-    newPlanId: Subscription,
-    planExpiresAt?: Timestamp
+    plan: Subscription,
+    expiresAt: Timestamp
   ): Promise<UserProfile> {
-    const profile = await this.ensureUserProfile();
+    await this.loadProfile();
+    if (!this._profile) throw new Error("Profile not loaded");
 
-    const newPlan = PlanManager.getPlanDetails(newPlanId);
-    if (!newPlan) {
-      throw new Error(`Plan with ID ${newPlanId} not found.`);
-    }
+    this.profile = {
+      ...this._profile,
+      plan: plan,
+      planExpiresAt: expiresAt,
+      updatedAt: Timestamp.now(),
+    };
 
-    profile.plan = newPlanId;
-    profile.planExpiresAt = planExpiresAt;
-    profile.updatedAt = Timestamp.now();
-
-    await store.saveUserProfile(this.userId, profile);
-    return profile;
+    await store.saveUserProfile(this.userId, this._profile);
+    return this._profile;
   }
 
-  async downgradePlan(): Promise<UserProfile> {
-    const profile = await this.ensureUserProfile();
+  async downgradePlan(userId: string): Promise<UserProfile> {
+    await this.loadProfile();
+    if (!this._profile) throw new Error("Profile not loaded");
 
-    profile.plan = Subscription.FREE;
-    profile.planExpiresAt = undefined;
-    profile.updatedAt = Timestamp.now();
+    this.profile = {
+      ...this._profile,
+      plan: Subscription.FREE,
+      planExpiresAt: null,
+      updatedAt: Timestamp.now(),
+    };
 
-    await store.saveUserProfile(this.userId, profile);
-    return profile;
+    await store.saveUserProfile(userId, this._profile);
+    return this._profile;
   }
 
-  getFeatures(profile?: UserProfile): PlanFeatures {
-    const effectiveProfile = profile ?? this.profile;
-    if (!effectiveProfile) {
-      throw new Error("User profile is not loaded.");
-    }
-
-    const planDetails = PlanManager.getPlanDetails(effectiveProfile.plan);
+  static getFeatures(profile: UserProfile): PlanFeatures {
+    const planDetails = this.getPlanDetails(profile.plan);
     if (!planDetails) {
-      console.warn(
-        `Unknown plan ID '${effectiveProfile.plan}', falling back to Free.`
-      );
-      return PlanManager.getPlanDetails(Subscription.FREE)!.features;
+      console.warn(`Unknown plan ID '${profile.plan}', falling back to Free.`);
+      return this.getPlanDetails(Subscription.FREE)!.features;
     }
 
     return planDetails.features;
   }
 
-  async hasExceededReminderLimit(): Promise<boolean> {
-    const profile = await this.ensureUserProfile();
-    const features = this.getFeatures(profile);
+  async hasExceededReminderLimit(userId: string): Promise<boolean> {
+    const profile = await this.loadProfile();
+    if (!profile) throw new Error("Profile not loaded");
+    const features = PlanManager.getFeatures(profile);
 
     const reminders = local
       .toArray()
-      .filter((r) => r.chatId === parseInt(profile.userId));
+      .filter((r) => r.chatId === parseInt(userId));
+
     return reminders.length >= features.maxReminders;
   }
 
-  hasFeature(featureKey: keyof PlanFeatures): boolean {
-    if (!this.profile) {
-      throw new Error("User profile is not loaded.");
-    }
-    const features = this.getFeatures(this.profile);
-    return features[featureKey] === true;
-  }
+  async hasFeature(featureKey: keyof PlanFeatures): Promise<boolean> {
+    const profile = await this.loadProfile();
+    if (!profile) throw new Error("Profile not loaded");
 
-  getUserProfile(): UserProfile | undefined {
-    return this.profile;
+    const features = PlanManager.getFeatures(profile);
+    return features[featureKey] === true;
   }
 }

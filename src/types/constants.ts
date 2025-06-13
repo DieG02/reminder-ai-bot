@@ -13,3 +13,7 @@ export enum Wizard {
   DELETE = "DELETE_WIZARD",
   CLEAR = "CLEAR_WIZARD",
 }
+
+export enum ErrorCode {
+  PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND",
+}
