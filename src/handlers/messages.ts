@@ -6,6 +6,7 @@ import { scheduleNotification } from "../services/cron";
 import { AIContext } from "../types/app";
 import { generateShortCode, getScheduleDateTime } from "../utils";
 import { ReminderData, StatusType, StoredReminder } from "../types";
+import { UserProfile } from "../types/user";
 
 const composer = new Composer<AIContext>();
 
@@ -13,6 +14,7 @@ composer.on("text", async (ctx) => {
   ctx.session = ctx.session || {};
   const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
+  const profile: UserProfile = ctx.state.manager.profile;
 
   const content = await extract(messageText, ContentType.REMINDER);
   console.log(content);
@@ -28,7 +30,10 @@ composer.on("text", async (ctx) => {
       return;
     }
 
-    const scheduleDateTime = getScheduleDateTime(data.reminder);
+    const scheduleDateTime = getScheduleDateTime(
+      data.reminder,
+      profile.timezone
+    );
     console.log(scheduleDateTime?.toDate());
     if (!scheduleDateTime) {
       await ctx.reply(

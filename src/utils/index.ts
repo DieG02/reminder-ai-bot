@@ -25,16 +25,18 @@ export const getNextRepeatDate = (
 /**
  * Standarize date and time with the ReminderBody type
  */
-export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
-  const TZ = "Europe/Rome"; // ctx.session.timezone
-  const now = dayjs().tz(TZ);
+export const getScheduleDateTime = (
+  input: ReminderBody,
+  timezone: string = "Europe/Rome"
+): Dayjs | null => {
+  const now = dayjs().tz(timezone);
 
   // Case 1: Has absolute date and time
   if (input.date && input.time) {
     const parsed = dayjs.tz(
       `${input.date} ${input.time}`,
       "DD/MM/YYYY HH:mm",
-      TZ
+      timezone
     );
     return parsed.isValid() ? parsed : null;
   }

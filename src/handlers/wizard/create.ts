@@ -5,6 +5,7 @@ import { generateShortCode, getScheduleDateTime } from "../../utils";
 import { scheduleNotification } from "../../services/cron";
 import { store } from "../../store";
 import { StoredReminder } from "../../types";
+import { UserProfile } from "../../types/user";
 
 const createWizard = new Scenes.WizardScene<AIContext>(
   Wizard.CREATE,
@@ -48,9 +49,14 @@ const createWizard = new Scenes.WizardScene<AIContext>(
     const task = ctx.session.body?.task!;
     const code = generateShortCode();
     const chatId = ctx.chat!.id;
+    const profile: UserProfile = ctx.state.manager.profile;
+
     ctx.session.body!.time = time;
 
-    const scheduleDateTime = getScheduleDateTime(ctx.session.body!);
+    const scheduleDateTime = getScheduleDateTime(
+      ctx.session.body!,
+      profile.timezone
+    );
     console.log(scheduleDateTime);
     if (!scheduleDateTime) {
       await ctx.reply(

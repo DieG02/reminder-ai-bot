@@ -3,17 +3,18 @@ import { Composer } from "telegraf";
 import { store } from "../store";
 import { AIContext } from "../types/app";
 import { escapeMarkdownV2 } from "../utils";
+import { PlanManager } from "../services/plan";
+import { UserProfile } from "../types/user";
 
 // Create a single Composer instance to hold all commands
 const composer = new Composer<AIContext>();
 
 composer.command("start", async (ctx: AIContext) => {
-  ctx.session = {};
-  ctx.session.count = 0;
-  ctx.session.username = ctx.from?.username;
-  ctx.session.timezone = "Europe/Rome";
+  // `middleware` handles the new/old users
+  const profile = ctx.state.manager.profile;
+
   await ctx.reply(
-    `👋 Welcome, *${ctx.session.username}*\\!\n\n` +
+    `👋 Welcome, *${profile?.username}*\\!\n\n` +
       `I'm here to help you stay organized with smart reminders\\.\n\n` +
       `✨ *Getting started is easy:*\n` +
       `• /name \\- Set your username\n` +
@@ -64,17 +65,18 @@ composer.command("info", async (ctx: AIContext) => {
 
 composer.command("next", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
+  const profile: UserProfile = ctx.state.manager.profile;
 
   const response = await store.getAllUserReminders(chatId, 1);
   if (!response?.length) return ctx.reply("You have no pending reminders.");
   const next = response[0];
 
   let message = `*Here is your next reminder:*\n\n`;
-  const scheduleDate = next.scheduleDateTime;
-  const formattedDate = scheduleDate.toLocaleString();
+  const scheduleDate = dayjs(next.scheduleDateTime).tz(profile.timezone);
+  const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
   message += `*Code:* \`${next.code}\`\n`;
-  message += `*Time:* ${formattedDate}\n`;
+  message += `*Time:* ${escapeMarkdownV2(formattedDate)}\n`;
   message += `*Task:* ${escapeMarkdownV2(next.task)}\n\n`;
 
   try {
@@ -90,6 +92,7 @@ composer.command("next", async (ctx: AIContext) => {
 
 composer.command("agenda", async (ctx: AIContext) => {
   const chatId = ctx.chat!.id;
+  const profile: UserProfile = ctx.state.manager.profile;
 
   const agenda = await store.getUserAgenda(chatId);
   if (!agenda?.length) {
@@ -99,7 +102,7 @@ composer.command("agenda", async (ctx: AIContext) => {
   let message = `*Here is your agenda for today:*\n\n`;
 
   agenda.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const scheduleDate = dayjs(reminder.scheduleDateTime).tz(profile.timezone);
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
@@ -123,6 +126,7 @@ composer.command("agenda", async (ctx: AIContext) => {
 composer.command("all", async (ctx) => {
   const userId = ctx.from?.id;
   const chatId = ctx.chat.id;
+  const profile: UserProfile = ctx.state.manager.profile;
   if (!userId) {
     return ctx.reply("Could not identify you. Please try again.");
   }
@@ -135,7 +139,7 @@ composer.command("all", async (ctx) => {
   let message = `*Here are your pending reminders:*\n\n`;
 
   userReminders.map((reminder, i) => {
-    const scheduleDate = dayjs(reminder.scheduleDateTime);
+    const scheduleDate = dayjs(reminder.scheduleDateTime).tz(profile.timezone);
     const formattedDate = scheduleDate.format("MMM DD, YYYY - HH:mm");
 
     message += `*${i + 1}\\. Code:* \`${reminder.code}\`\n`;
@@ -154,6 +158,14 @@ composer.command("all", async (ctx) => {
           .join("\n")
     );
   }
+});
+
+composer.command("status", async (ctx: AIContext) => {
+  const planManager = ctx.state.manager as PlanManager;
+  const profile = planManager.profile;
+
+  if (!profile) return ctx.reply("No profile found");
+  return ctx.reply(`Your current plan is: ${profile.plan}`);
 });
 
 export default composer;
