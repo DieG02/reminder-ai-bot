@@ -41,6 +41,23 @@ export class PlanManager {
     return this._profile;
   }
 
+  async syncProfile(updatedData: Partial<UserProfile>): Promise<UserProfile> {
+    if (!this._profile) await this.loadProfile();
+    if (!this._profile) {
+      throw new Error("Cannot update profile: Profile not loaded.");
+    }
+
+    const newProfile: UserProfile = {
+      ...this._profile,
+      ...updatedData,
+      updatedAt: Timestamp.now(),
+    };
+
+    this.profile = newProfile;
+    await store.saveUserProfile(this.userId, newProfile);
+    return newProfile;
+  }
+
   async createProfile(
     initialProfile: Omit<
       UserProfile,
@@ -139,9 +156,7 @@ export class PlanManager {
     if (!profile) throw new Error("Profile not loaded");
     const features = PlanManager.getFeatures(profile);
 
-    const reminders = local
-      .toArray()
-      .filter((r) => r.chatId === parseInt(userId));
+    const reminders = local.toArray().filter((r) => r.chatId === userId);
 
     return reminders.length >= features.maxReminders;
   }

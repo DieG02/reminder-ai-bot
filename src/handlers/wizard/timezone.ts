@@ -10,6 +10,7 @@ const timezoneWizard = new Scenes.WizardScene<AIContext>(
     return ctx.wizard.next();
   },
   async (ctx) => {
+    // TODO: Fix couldn't readt prop 'message' (they sent a sticker or something else)
     if (!("text" in ctx.message!)) return ctx.scene.leave();
 
     const input = ctx.message?.text?.trim();
@@ -37,7 +38,7 @@ const timezoneWizard = new Scenes.WizardScene<AIContext>(
 
     const selected = ctx.message.text.trim();
     if (ctx.session.timezoneMatches?.includes(selected)) {
-      ctx.session.timezone = selected;
+      ctx.state.manager.syncProfile({ timezone: selected });
       await ctx.reply(
         `✅ Timezone set to ${selected}`,
         Markup.removeKeyboard()

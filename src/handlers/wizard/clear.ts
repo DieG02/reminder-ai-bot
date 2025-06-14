@@ -7,7 +7,7 @@ const clearWizard = new Scenes.WizardScene<AIContext>(
   Wizard.CLEAR,
   async (ctx) => {
     await ctx.reply(
-      `⚠️ Type "${ctx.session.username}" to confirm clearing all reminders:`
+      `⚠️ Type "${ctx.state.manager.profile.username}" to confirm clearing all reminders:`
     );
     return ctx.wizard.next();
   },
@@ -15,10 +15,10 @@ const clearWizard = new Scenes.WizardScene<AIContext>(
     if (!("text" in ctx.message!)) return ctx.scene.leave();
 
     const input = ctx.message?.text?.trim();
-    if (input !== ctx.session.username) {
+    if (input !== ctx.state.manager.profile.username) {
       await ctx.reply("❌ Username doesn't match. Action cancelled.");
     } else {
-      await store.clearUserReminders(ctx.chat!.id);
+      await store.clearUserReminders(ctx.state.manager.userId);
       await ctx.reply("✅ All your reminders have been cleared.");
     }
     return ctx.scene.leave();

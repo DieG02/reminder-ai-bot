@@ -1,7 +1,7 @@
 import dayjs from "../lib/dayjs";
 import local from "./model";
 import { db } from "./index";
-import { firestore } from "firebase-admin";
+import { Timestamp } from "firebase-admin/firestore";
 import { REMINDER_COLLECTION } from "../types/constants";
 import { FirestoreReminderDoc, StoredReminder } from "../types";
 
@@ -16,12 +16,12 @@ export const loadReminders = async (): Promise<void> => {
     const now = new Date();
     const snapshot = await db
       .collection(REMINDER_COLLECTION)
-      .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
+      .where("scheduleDateTime", ">", Timestamp.fromDate(now))
       .get();
 
     const expiredSnapshot = await db
       .collection(REMINDER_COLLECTION)
-      .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(now))
+      .where("scheduleDateTime", "<=", Timestamp.fromDate(now))
       .get();
 
     for (const doc of expiredSnapshot.docs) {
@@ -67,7 +67,7 @@ export const updateReminder = async (
         {
           chatId: reminder.chatId,
           task: reminder.task,
-          scheduleDateTime: firestore.Timestamp.fromDate(
+          scheduleDateTime: Timestamp.fromDate(
             reminder.scheduleDateTime.toDate()
           ),
           jobId: reminder.jobId,
@@ -95,9 +95,7 @@ export const addReminder = async (
     const docRef = await db.collection(REMINDER_COLLECTION).add({
       chatId: reminder.chatId,
       task: reminder.task,
-      scheduleDateTime: firestore.Timestamp.fromDate(
-        reminder.scheduleDateTime.toDate()
-      ),
+      scheduleDateTime: Timestamp.fromDate(reminder.scheduleDateTime.toDate()),
       jobId: "",
       isScheduled: false,
       code: reminder.code,
@@ -150,7 +148,7 @@ export const deleteReminder = async (
  * Get all reminders for today, from 00:00 to 23:59hs
  */
 export const getUserAgenda = async (
-  chatId: number
+  chatId: string
 ): Promise<StoredReminder[] | null> => {
   try {
     const nowInTimeZone = new Date().toLocaleString("en-US", {
@@ -165,8 +163,8 @@ export const getUserAgenda = async (
       .collection(REMINDER_COLLECTION)
       .where("chatId", "==", chatId)
       .where("isScheduled", "==", true) // Only show active ones
-      .where("scheduleDateTime", ">=", firestore.Timestamp.fromDate(startDate))
-      .where("scheduleDateTime", "<=", firestore.Timestamp.fromDate(endDate))
+      .where("scheduleDateTime", ">=", Timestamp.fromDate(startDate))
+      .where("scheduleDateTime", "<=", Timestamp.fromDate(endDate))
       .orderBy("scheduleDateTime", "asc")
       .get();
 
@@ -193,16 +191,16 @@ export const getUserAgenda = async (
  * Get all reminders from a user by chatId.
  */
 export const getAllUserReminders = async (
-  chatId: number,
+  userId: string,
   limit: number = 25
 ): Promise<StoredReminder[] | null> => {
   try {
     const now = new Date();
     let query = db
       .collection(REMINDER_COLLECTION)
-      .where("chatId", "==", chatId)
+      .where("chatId", "==", userId)
       .where("isScheduled", "==", true)
-      .where("scheduleDateTime", ">", firestore.Timestamp.fromDate(now))
+      .where("scheduleDateTime", ">", Timestamp.fromDate(now))
       .orderBy("scheduleDateTime", "asc");
 
     if (limit && typeof limit === "number") {
@@ -228,17 +226,15 @@ export const getAllUserReminders = async (
 /**
  * Deletes all reminders for a specific chatId.
  */
-export const clearUserReminders = async (
-  chatId: number | string
-): Promise<void> => {
+export const clearUserReminders = async (userId: string): Promise<void> => {
   try {
     const snapshot = await db
       .collection(REMINDER_COLLECTION)
-      .where("chatId", "==", chatId)
+      .where("chatId", "==", userId)
       .get();
 
     if (snapshot.empty) {
-      console.log(`No reminders found for chatId: ${chatId}`);
+      console.log(`No reminders found for chatId: ${userId}`);
       return;
     }
 
@@ -249,8 +245,8 @@ export const clearUserReminders = async (
     });
 
     await batch.commit();
-    console.log(`Deleted ${snapshot.size} reminders for chatId: ${chatId}`);
+    console.log(`Deleted ${snapshot.size} reminders for chatId: ${userId}`);
   } catch (error) {
-    console.error(`Failed to delete reminders for chatId ${chatId}:`, error);
+    console.error(`Failed to delete reminders for chatId ${userId}:`, error);
   }
 };
