@@ -64,10 +64,10 @@ composer.command("info", async (ctx: AIContext) => {
 });
 
 composer.command("next", async (ctx: AIContext) => {
-  const chatId = ctx.chat!.id;
+  const userId = ctx.state.manager.userId;
   const profile: UserProfile = ctx.state.manager.profile;
 
-  const response = await store.getAllUserReminders(chatId, 1);
+  const response = await store.getAllUserReminders(userId, 1);
   if (!response?.length) return ctx.reply("You have no pending reminders.");
   const next = response[0];
 
@@ -91,10 +91,10 @@ composer.command("next", async (ctx: AIContext) => {
 });
 
 composer.command("agenda", async (ctx: AIContext) => {
-  const chatId = ctx.chat!.id;
+  const userId = ctx.state.manager.userId;
   const profile: UserProfile = ctx.state.manager.profile;
 
-  const agenda = await store.getUserAgenda(chatId);
+  const agenda = await store.getUserAgenda(userId);
   if (!agenda?.length) {
     return ctx.reply("You have no pending reminders for today.");
   }
@@ -124,14 +124,13 @@ composer.command("agenda", async (ctx: AIContext) => {
 });
 
 composer.command("all", async (ctx) => {
-  const userId = ctx.from?.id;
-  const chatId = ctx.chat.id;
+  const userId = ctx.state.manager.userId;
   const profile: UserProfile = ctx.state.manager.profile;
   if (!userId) {
     return ctx.reply("Could not identify you. Please try again.");
   }
 
-  const userReminders = await store.getAllUserReminders(chatId);
+  const userReminders = await store.getAllUserReminders(userId);
   if (!userReminders || userReminders?.length == 0) {
     return ctx.reply("You have no pending reminders.");
   }
