@@ -19,7 +19,7 @@ export interface SessionData extends Scenes.WizardSession {
 // This extends Telegraf's default Context and includes your custom session
 export interface AIContext extends Context {
   session: SessionData;
-  manager?: PlanManager;
+  manager: PlanManager;
   wizard: Scenes.WizardContextWizard<AIContext>;
   scene: Scenes.SceneContextScene<AIContext, Scenes.WizardSessionData>;
 }

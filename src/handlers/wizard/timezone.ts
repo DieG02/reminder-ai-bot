@@ -38,7 +38,7 @@ const timezoneWizard = new Scenes.WizardScene<AIContext>(
 
     const selected = ctx.message.text.trim();
     if (ctx.session.timezoneMatches?.includes(selected)) {
-      ctx.state.manager.syncProfile({ timezone: selected });
+      ctx.manager.syncProfile({ timezone: selected });
       await ctx.reply(
         `✅ Timezone set to ${selected}`,
         Markup.removeKeyboard()

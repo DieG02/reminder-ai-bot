@@ -48,8 +48,7 @@ const createWizard = new Scenes.WizardScene<AIContext>(
     const time = ctx.message?.text?.trim();
     const task = ctx.session.body?.task!;
     const code = generateShortCode();
-    const userId = ctx.state.manager.userId;
-    const profile: UserProfile = ctx.state.manager.profile;
+    const profile = ctx.manager.profile!;
 
     ctx.session.body!.time = time;
 
@@ -67,7 +66,7 @@ const createWizard = new Scenes.WizardScene<AIContext>(
 
     const newReminder: StoredReminder = {
       id: "",
-      chatId: userId,
+      chatId: profile.id,
       task,
       scheduleDateTime,
       jobId: "",

@@ -13,8 +13,7 @@ const composer = new Composer<AIContext>();
 composer.on("text", async (ctx) => {
   ctx.session = ctx.session || {};
   const messageText = ctx.message.text;
-  const userId = ctx.state.manager.userId;
-  const profile: UserProfile = ctx.state.manager.profile;
+  const profile: UserProfile = ctx.manager.profile!;
 
   const content = await extract(messageText, ContentType.REMINDER);
   console.log(content);
@@ -43,7 +42,7 @@ composer.on("text", async (ctx) => {
 
     const newReminder: StoredReminder = {
       id: "",
-      chatId: userId,
+      chatId: profile.id,
       task,
       scheduleDateTime,
       jobId: "",

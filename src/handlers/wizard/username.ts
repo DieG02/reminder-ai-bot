@@ -13,7 +13,7 @@ const usernameWizard = new Scenes.WizardScene<AIContext>(
 
     const input = ctx.message?.text?.trim();
     if (input) {
-      ctx.state.manager.syncProfile({ username: input });
+      ctx.manager.syncProfile({ username: input });
       await ctx.reply(`✅ Username set to ${input}`);
     }
     return ctx.scene.leave();
