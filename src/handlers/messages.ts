@@ -13,7 +13,7 @@ const composer = new Composer<AIContext>();
 composer.on("text", async (ctx) => {
   ctx.session = ctx.session || {};
   const messageText = ctx.message.text;
-  const profile: UserProfile = ctx.manager.profile!;
+  const { id: userId, timezone }: UserProfile = ctx.manager.profile;
 
   const content = await extract(messageText, ContentType.REMINDER);
   console.log(content);
@@ -29,10 +29,7 @@ composer.on("text", async (ctx) => {
       return;
     }
 
-    const scheduleDateTime = getScheduleDateTime(
-      data.reminder,
-      profile.timezone
-    );
+    const scheduleDateTime = getScheduleDateTime(data.reminder, timezone);
     if (!scheduleDateTime) {
       await ctx.reply(
         "I couldn't understand the date/time for the reminder. Please try again."
@@ -42,7 +39,7 @@ composer.on("text", async (ctx) => {
 
     const newReminder: StoredReminder = {
       id: "",
-      chatId: profile.id,
+      chatId: userId,
       task,
       scheduleDateTime,
       jobId: "",

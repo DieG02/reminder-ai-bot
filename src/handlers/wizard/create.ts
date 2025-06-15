@@ -48,14 +48,11 @@ const createWizard = new Scenes.WizardScene<AIContext>(
     const time = ctx.message?.text?.trim();
     const task = ctx.session.body?.task!;
     const code = generateShortCode();
-    const profile = ctx.manager.profile!;
+    const { id: userId, timezone } = ctx.manager.profile;
 
     ctx.session.body!.time = time;
 
-    const scheduleDateTime = getScheduleDateTime(
-      ctx.session.body!,
-      profile.timezone
-    );
+    const scheduleDateTime = getScheduleDateTime(ctx.session.body!, timezone);
     console.log(scheduleDateTime);
     if (!scheduleDateTime) {
       await ctx.reply(
@@ -66,7 +63,7 @@ const createWizard = new Scenes.WizardScene<AIContext>(
 
     const newReminder: StoredReminder = {
       id: "",
-      chatId: profile.id,
+      chatId: userId,
       task,
       scheduleDateTime,
       jobId: "",

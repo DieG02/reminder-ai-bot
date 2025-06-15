@@ -31,4 +31,5 @@ export const store = {
   clearUserReminders: firestore.clearUserReminders,
   getUserProfile: user.getUserProfile,
   saveUserProfile: user.saveUserProfile,
+  createUserProfile: user.createUserProfile,
 };

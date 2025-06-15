@@ -1,6 +1,9 @@
 import { db } from "./index";
 import { PROFILE_COLLECTION } from "../types/constants";
 import { UserProfile } from "../types/user";
+import { PlanManager } from "../services/plan";
+import { Subscription } from "../types/subscription";
+import { Timestamp } from "firebase-admin/firestore";
 
 /**
  * Retrieves a user's profile from Firestore.
@@ -34,4 +37,32 @@ export const saveUserProfile = async (
 ): Promise<void> => {
   const docRef = db.collection(PROFILE_COLLECTION).doc(userId);
   await docRef.set(profile, { merge: true });
+};
+
+/**
+ * Create a new user's profile in Firestore.
+ *
+ * @param userId The ID of the user (telegram user ID).
+ * @param profile The initial UserProfile object to create.
+ */
+export const createUserProfile = async (
+  userId: string,
+  profile: Omit<UserProfile, "plan" | "trialEndsAt" | "updatedAt" | "createdAt">
+): Promise<UserProfile> => {
+  const freePlan = PlanManager.getPlanDetails(Subscription.FREE);
+  if (!freePlan) {
+    throw new Error("Free plan configuration not found!");
+  }
+  const newUserProfile: UserProfile = {
+    ...profile,
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
+    plan: Subscription.FREE,
+
+    planExpiresAt: null,
+    trialEndsAt: null,
+  };
+
+  await saveUserProfile(userId, newUserProfile);
+  return newUserProfile;
 };

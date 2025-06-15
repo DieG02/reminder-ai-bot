@@ -2,33 +2,32 @@ import { PlanManager } from "../services/plan";
 import { ErrorCode } from "../types/constants";
 import { AIContext } from "../types/app";
 import { MiddlewareFn } from "telegraf";
+import { store } from "../store";
+import { UserProfile } from "../types/user";
 
 export const subscription: MiddlewareFn<AIContext> = async (
   ctx: AIContext,
   next: () => Promise<void>
 ) => {
   const userId = String(ctx.from?.id);
-  const manager = new PlanManager(userId);
+  let profile: UserProfile;
 
   try {
-    const profile = await manager.loadProfile();
-    manager.profile = profile;
-  } catch (err: any) {
-    if (err.code !== ErrorCode.PROFILE_NOT_FOUND) {
-      console.error(err.message);
-      return;
+    const result = await store.getUserProfile(userId);
+    if (!result) {
+      throw new Error("Profile not found");
     }
-
-    // Automatically create a new profile if not found
-    await manager.createProfile({
+    profile = result;
+  } catch {
+    profile = await store.createUserProfile(userId, {
       id: userId,
       username: ctx.from?.username ?? "",
-      timezone: "Europe/Rome", // Default timezone
+      timezone: "Europe/Rome",
       planExpiresAt: null,
     });
   }
 
+  const manager = new PlanManager(profile);
   ctx.manager = manager;
-
   await next();
 };
