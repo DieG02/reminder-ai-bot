@@ -2,6 +2,7 @@
 
 export const REMINDER_COLLECTION = "reminders";
 export const PROFILE_COLLECTION = "profile";
+export const BOT_NAME = "Reminder Bot";
 
 // --- Wizard Constants ---
 

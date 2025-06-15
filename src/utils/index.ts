@@ -86,7 +86,7 @@ export function generateShortCode(): string {
 /**
  * Helper function to escape MarkdownV2 special characters.
  */
-export const escapeMarkdownV2 = (text: string): string => {
+export const messageEscape = (text: string): string => {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
 };
 
