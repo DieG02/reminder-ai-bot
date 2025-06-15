@@ -1,8 +1,9 @@
 import { PlanManager } from "../services/plan";
 import { ErrorCode } from "../types/constants";
 import { AIContext } from "../types/app";
+import { MiddlewareFn } from "telegraf";
 
-export const subscription = async (
+export const subscription: MiddlewareFn<AIContext> = async (
   ctx: AIContext,
   next: () => Promise<void>
 ) => {
@@ -27,7 +28,7 @@ export const subscription = async (
     });
   }
 
-  ctx.state.manager = manager;
+  ctx.manager = manager;
 
   await next();
 };
