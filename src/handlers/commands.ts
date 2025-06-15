@@ -11,54 +11,53 @@ const composer = new Composer<AIContext>();
 
 composer.command("start", async (ctx: AIContext) => {
   // `middleware` handles the new/old users
-  const profile = ctx.state.manager.profile;
+  const profile = ctx.state.manager!.profile;
 
   await ctx.reply(
     `👋 Welcome, *${profile?.username}*\\!\n\n` +
       `I'm here to help you stay organized with smart reminders\\.\n\n` +
       `✨ *Getting started is easy:*\n` +
-      `• /name \\- Set your username\n` +
+      `• /username \\- Set your username\n` +
       `• /timezone \\- Set your timezone\n` +
-      `• /all \\- View all your reminders\n\n` +
-      `📖 For full instructions, use /info`,
+      `• /all \\- View all your reminders\n` +
+      `📖 For full instructions, use /help\n` +
+      `ℹ️ To know more about your account, use /info\n\n`,
     { parse_mode: "MarkdownV2" }
   );
 });
 
 composer.command("help", async (ctx: AIContext) => {
   await ctx.reply(
-    `*Available commands:*\n\n` +
-      `/start \\- Start the bot\n` +
-      `/help \\- Show help message\n` +
-      `/info \\- Learn how the bot works\n\n` +
-      `/name \\- Set your username\n` +
-      // `/timezone \\- Set your timezone\n\n` +
+    `👋 *Hi there\\!* I'm your *Reminder Bot*\\. Here's how I can help you:\n\n` +
+      `🚀 *Main Commands:*\n` +
+      `/create \\- Create a new reminder\n` +
+      `/update \\- Update a reminder\n` +
+      `/delete \\- Delete a reminder\n` +
+      `/clear \\- Delete all your reminders\n` +
       `/next \\- Show your next reminder\n` +
       `/agenda \\- Show all reminders for today\n` +
-      `/all \\- Show all your reminders\n` +
-      // `/update \\- Update a reminder\n` +
-      `/delete \\- Delete a reminder\n` +
-      `/clear \\- Delete all reminders`,
+      `/all \\- Show all your reminders\n\n` +
+      `🔧 *Account Settings:*\n` +
+      `/start \\- Start the bot\n` +
+      `/username \\- Set your username\n` +
+      `/timezone \\- Set your timezone\n` +
+      // `/plan \\- Get your current subscription\n` +
+      `/account \\- See your account details\n\n` +
+      `ℹ️ *Information & Support:*\n` +
+      `/help \\- Learn how the bot works\n` +
+      `/info \\- Get your account settings\n\n`,
     { parse_mode: "MarkdownV2" }
   );
 });
 
 composer.command("info", async (ctx: AIContext) => {
+  const profile: UserProfile = ctx.state.manager.profile;
   await ctx.reply(
-    `📌 *Bot Workflow & Features*\n\n` +
-      `1\\. *Set Up Your Profile*\n` +
-      `Use /name to define your username\n\n` +
-      // `or set your local time using /timezone\\.\n\n` +
-      `2\\. *Create Reminders*\n` +
-      `You can create reminders by sending a message like:\n` +
-      `"Remind me to call John tomorrow at 3 PM"\n\n` +
-      `3\\. *Manage Reminders*\n` +
-      `/next \\- View your next upcoming reminder\n` +
-      `/all \\- View all saved reminders\n` +
-      `/update \\- Modify a reminder\n` +
-      `/delete \\- Remove a specific reminder\n` +
-      `/clear \\- Delete all reminders at once\n\n` +
-      `🧠 The bot understands natural language\\! Try writing reminders in your own words\\.`,
+    `📌  *About Your Reminder Bot:*\n` +
+      `I'm designed to help you never miss a beat\\!\n` +
+      `Version: 1\\.2\\.0\n` +
+      "Developer: [DieG02](https://github.com/DieG02/)\n\n",
+    // [Privacy Policy](https://your-privacy-policy-link.com) | [Terms of Service](https://your-terms-link.com)
     { parse_mode: "MarkdownV2" }
   );
 });
@@ -159,12 +158,24 @@ composer.command("all", async (ctx) => {
   }
 });
 
-composer.command("status", async (ctx: AIContext) => {
-  const planManager = ctx.state.manager as PlanManager;
-  const profile = planManager.profile;
-
-  if (!profile) return ctx.reply("No profile found");
-  return ctx.reply(`Your current plan is: ${profile.plan}`);
+composer.command("account", async (ctx: AIContext) => {
+  const profile: UserProfile = ctx.state.manager.profile;
+  ctx.reply(
+    `👤 *Your Profile:*\n` +
+      `User ID: \`${profile.id}\`\n` +
+      `Username: \`${profile.username}\`\n` +
+      `Timezone: \`${profile.timezone}\`\n` +
+      `Joined: ${escapeMarkdownV2(
+        profile.createdAt?.toDate().toLocaleDateString()!
+      )}\n\n` +
+      // `Last Activity: Just now` +
+      `✨ *Your Plan Usage \\- ${profile.plan}*\n` +
+      // `•  \\(Trial ends: ${profile.trialEndsAt}\\)\n` +
+      `1\\. Maximum Reminders: 5/50\n` +
+      `2\\. Custom Timezones: ✅\n` +
+      `3\\. Advanced Notifications: ❌\n\n`,
+    { parse_mode: "MarkdownV2" }
+  );
 });
 
 export default composer;
