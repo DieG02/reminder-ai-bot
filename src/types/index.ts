@@ -31,7 +31,7 @@ export interface ReminderBody {
 
 // Represents the structure of a reminder document in Firestore
 export interface FirestoreReminderDoc {
-  chatId: number;
+  chatId: string;
   task: string;
   scheduleDateTime: Timestamp; // Stored as Firestore Timestamp
   jobId: string;
@@ -45,7 +45,7 @@ export interface FirestoreReminderDoc {
 // Represents the structure of a reminder used within our application's logic
 export interface StoredReminder {
   id: string; // Document ID from Firestore
-  chatId: number;
+  chatId: string;
   task: string;
   scheduleDateTime: Dayjs; // JavaScript Date object
   jobId: string;

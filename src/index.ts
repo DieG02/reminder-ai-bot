@@ -3,6 +3,7 @@ dotenv.config();
 
 import { Telegraf, session } from "telegraf";
 import { rescheduleAllReminders, scheduledJobs } from "./services/cron";
+import { subscription } from "./middleware/plan";
 import commandHandlers from "./handlers/commands";
 import wizardHandlers from "./handlers/wizard";
 import messageHandlers from "./handlers/messages";
@@ -19,6 +20,7 @@ export const bot = new Telegraf<AIContext>(TOKEN);
 
 // --- Session middleware ---
 bot.use(session());
+bot.use(subscription);
 
 // --- Handle ALL Errors ---
 bot.catch((err: unknown, ctx: AIContext) => {

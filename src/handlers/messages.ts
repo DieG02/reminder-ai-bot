@@ -1,19 +1,21 @@
 import { Composer } from "telegraf";
 import { store } from "../store";
-import { extractReminder } from "../services/openai";
+import { extract } from "../config/openai";
+import { ContentType } from "../config/context";
 import { scheduleNotification } from "../services/cron";
 import { AIContext } from "../types/app";
 import { generateShortCode, getScheduleDateTime } from "../utils";
 import { ReminderData, StatusType, StoredReminder } from "../types";
+import { UserProfile } from "../types/user";
 
 const composer = new Composer<AIContext>();
 
 composer.on("text", async (ctx) => {
   ctx.session = ctx.session || {};
-  const chatId = ctx.chat.id;
   const messageText = ctx.message.text;
+  const { id: userId, timezone }: UserProfile = ctx.manager.profile;
 
-  const content = await extractReminder(messageText);
+  const content = await extract(messageText, ContentType.REMINDER);
   console.log(content);
   content.map(async (data: ReminderData) => {
     const { task } = data.reminder;
@@ -27,8 +29,7 @@ composer.on("text", async (ctx) => {
       return;
     }
 
-    const scheduleDateTime = getScheduleDateTime(data.reminder);
-    console.log(scheduleDateTime);
+    const scheduleDateTime = getScheduleDateTime(data.reminder, timezone);
     if (!scheduleDateTime) {
       await ctx.reply(
         "I couldn't understand the date/time for the reminder. Please try again."
@@ -38,7 +39,7 @@ composer.on("text", async (ctx) => {
 
     const newReminder: StoredReminder = {
       id: "",
-      chatId,
+      chatId: userId,
       task,
       scheduleDateTime,
       jobId: "",

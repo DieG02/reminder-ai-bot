@@ -84,7 +84,7 @@ class ReminderManager {
    * @param userId A number representing the userId / chatId
    * @returns An array of StoredReminder objects that fall within the given period
    */
-  filter(start: Dayjs, end: Dayjs, userId: number): StoredReminder[] {
+  filter(start: Dayjs, end: Dayjs, userId: string): StoredReminder[] {
     const filteredReminders: StoredReminder[] = [];
 
     if (start.isAfter(end)) {

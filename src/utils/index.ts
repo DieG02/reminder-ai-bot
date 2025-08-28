@@ -1,6 +1,7 @@
 import dayjs from "../lib/dayjs";
 import { Dayjs } from "dayjs";
 import { RepeatType, ReminderBody } from "../types/";
+import { getTimeZones, TimeZone } from "@vvo/tzdb";
 /**
  * Calculate the next date in a 'repeat' task
  */
@@ -24,16 +25,18 @@ export const getNextRepeatDate = (
 /**
  * Standarize date and time with the ReminderBody type
  */
-export const getScheduleDateTime = (input: ReminderBody): Dayjs | null => {
-  const TZ = "Europe/Rome"; // ctx.session.timezone
-  const now = dayjs().tz(TZ);
+export const getScheduleDateTime = (
+  input: ReminderBody,
+  timezone: string = "Europe/Rome"
+): Dayjs | null => {
+  const now = dayjs().tz(timezone);
 
   // Case 1: Has absolute date and time
   if (input.date && input.time) {
     const parsed = dayjs.tz(
       `${input.date} ${input.time}`,
       "DD/MM/YYYY HH:mm",
-      TZ
+      timezone
     );
     return parsed.isValid() ? parsed : null;
   }
@@ -83,6 +86,31 @@ export function generateShortCode(): string {
 /**
  * Helper function to escape MarkdownV2 special characters.
  */
-export const escapeMarkdownV2 = (text: string): string => {
+export const messageEscape = (text: string): string => {
   return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, "\\$&");
+};
+
+/**
+ * Helper function to search between common timezones
+ */
+export const searchTimezones = (query: string) => {
+  const q = query.toLowerCase();
+
+  return getTimeZones({ includeUtc: true })
+    .filter((tz: TimeZone) => {
+      return (
+        tz.name.toLowerCase().includes(q) ||
+        tz.countryName.toLowerCase().includes(q) ||
+        tz.mainCities.some((c) => c.toLowerCase().includes(q)) ||
+        tz.alternativeName.toLowerCase().includes(q)
+      );
+    })
+    .slice(0, 5)
+    .map((tz: TimeZone) => ({
+      name: tz.name,
+      label: tz.abbreviation || tz.alternativeName,
+      offset: tz.rawOffsetInMinutes,
+      country: tz.countryName,
+      cities: tz.mainCities,
+    }));
 };

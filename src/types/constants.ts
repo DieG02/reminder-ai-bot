@@ -1,6 +1,8 @@
 // --- Constants ---
 
-export const REMINDERS_COLLECTION = "reminders";
+export const REMINDER_COLLECTION = "reminders";
+export const PROFILE_COLLECTION = "profile";
+export const BOT_NAME = "Reminder Bot";
 
 // --- Wizard Constants ---
 
@@ -11,4 +13,9 @@ export enum Wizard {
   TIMEZONE = "TIMEZONE_WIZARD",
   DELETE = "DELETE_WIZARD",
   CLEAR = "CLEAR_WIZARD",
+  TIMETABLE = "TIMETABLE_WIZARD",
+}
+
+export enum ErrorCode {
+  PROFILE_NOT_FOUND = "PROFILE_NOT_FOUND",
 }
