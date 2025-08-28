@@ -13,6 +13,7 @@ export enum Wizard {
   TIMEZONE = "TIMEZONE_WIZARD",
   DELETE = "DELETE_WIZARD",
   CLEAR = "CLEAR_WIZARD",
+  TIMETABLE = "TIMETABLE_WIZARD",
 }
 
 export enum ErrorCode {

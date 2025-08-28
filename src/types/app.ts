@@ -8,12 +8,19 @@ export interface SessionData extends Scenes.WizardSession {
   locale?: string;
   services?: string[];
   waiting?: string;
-  timezone?: string;
-  timezoneMatches?: string[]; // Alternative during timezone
 
+  // Timezone Handling
+  timezone?: string;
+  timezoneMatches?: string[];
+
+  // Reminder Handling
   current?: number; // By ID
   body?: ReminderBody; // Body structure only
   reminder?: ReminderData; // Full Reminder
+
+  // Timetable Handling
+  taskIndex: number;
+  timetable: any;
 }
 
 // This extends Telegraf's default Context and includes your custom session
